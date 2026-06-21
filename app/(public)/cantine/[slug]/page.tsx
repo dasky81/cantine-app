@@ -2,13 +2,11 @@ import { notFound } from 'next/navigation'
 import type { Metadata } from 'next'
 import Image from 'next/image'
 import Link from 'next/link'
-import dynamic from 'next/dynamic'
 import { MapPin, Phone, Mail, Globe, Clock, Euro, Grape, Languages, CheckCircle } from 'lucide-react'
 import { createServerClient } from '@/lib/supabase'
 import FavoritoButton from '@/components/FavoritoButton'
+import MappaWrapper from '@/components/MappaWrapper'
 import type { Cantina } from '@/lib/supabase'
-
-const MappaLeaflet = dynamic(() => import('@/components/MappaLeaflet'), { ssr: false })
 
 const CERT_STYLE: Record<string, string> = {
   Biologico: 'bg-green-100 text-green-800 border-green-200',
@@ -185,7 +183,7 @@ export default async function CantinePage({ params }: { params: Promise<{ slug: 
                 <h2 className="text-lg font-bold text-gray-900 mb-3">Come raggiungerci</h2>
                 {c.indirizzo && <p className="text-gray-500 text-sm mb-3">{c.indirizzo}</p>}
                 <div className="h-56 rounded-xl overflow-hidden">
-                  <MappaLeaflet
+                  <MappaWrapper
                     markers={[{ id: c.id, slug: c.slug, nome: c.nome, lat: c.lat, lng: c.lng, regione: c.regione, foto_principale: c.foto_principale }]}
                     center={[c.lat, c.lng]}
                     zoom={13}

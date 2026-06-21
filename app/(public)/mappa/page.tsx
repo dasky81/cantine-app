@@ -1,9 +1,7 @@
 import type { Metadata } from 'next'
-import dynamic from 'next/dynamic'
 import { createServerClient } from '@/lib/supabase'
+import MappaWrapper from '@/components/MappaWrapper'
 import type { MapMarker } from '@/components/MappaLeaflet'
-
-const MappaLeaflet = dynamic(() => import('@/components/MappaLeaflet'), { ssr: false })
 
 export const metadata: Metadata = {
   title: "Mappa cantine d'Italia — cantine.app",
@@ -39,7 +37,7 @@ export default async function MappaPage() {
         </div>
       </div>
       <div className="flex-1">
-        <MappaLeaflet markers={markers} center={[42.5, 12.5]} zoom={6} className="h-full w-full" />
+        <MappaWrapper markers={markers} center={[42.5, 12.5]} zoom={6} className="h-full w-full" />
       </div>
     </main>
   )
