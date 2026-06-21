@@ -1,5 +1,5 @@
 import type { Metadata } from 'next'
-import { createServerClient } from '@/lib/supabase'
+import { createServerClient } from '@/lib/supabase-server'
 import HeroSlideshow from '@/components/HeroSlideshow'
 import SearchSection from '@/components/SearchSection'
 import Footer from '@/components/Footer'

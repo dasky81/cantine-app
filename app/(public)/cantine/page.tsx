@@ -1,5 +1,5 @@
 import type { Metadata } from 'next'
-import { createServerClient } from '@/lib/supabase'
+import { createServerClient } from '@/lib/supabase-server'
 import CantineCard from '@/components/CantineCard'
 import type { Cantina } from '@/lib/supabase'
 

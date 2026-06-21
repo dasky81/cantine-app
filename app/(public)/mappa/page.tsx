@@ -1,5 +1,5 @@
 import type { Metadata } from 'next'
-import { createServerClient } from '@/lib/supabase'
+import { createServerClient } from '@/lib/supabase-server'
 import MappaWrapper from '@/components/MappaWrapper'
 import type { MapMarker } from '@/components/MappaLeaflet'
 

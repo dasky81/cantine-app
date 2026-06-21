@@ -1,4 +1,4 @@
-import { createServerClient } from '@/lib/supabase'
+import { createServerClient } from '@/lib/supabase-server'
 import { createAdminClient } from '@/lib/supabase-admin'
 import { Store, CheckCircle, Users, ClipboardCheck, Search, FileText } from 'lucide-react'
 

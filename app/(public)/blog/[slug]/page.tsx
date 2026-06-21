@@ -3,7 +3,7 @@ import { notFound } from 'next/navigation'
 import Image from 'next/image'
 import Link from 'next/link'
 import { CalendarDays, ArrowLeft, Tag } from 'lucide-react'
-import { createServerClient } from '@/lib/supabase'
+import { createServerClient } from '@/lib/supabase-server'
 import { format } from 'date-fns'
 import { it } from 'date-fns/locale'
 
