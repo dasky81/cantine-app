@@ -1,3 +1,6 @@
+'use client'
+
+import { useState } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { MapPin, Wine, Leaf, Euro } from 'lucide-react'
@@ -9,6 +12,28 @@ const CERT_STYLE: Record<string, string> = {
   Sostenibile: 'bg-teal-100 text-teal-800',
 }
 
+function CantinaCover({ src, nome }: { src: string | null; nome: string }) {
+  const [error, setError] = useState(false)
+
+  if (!src || error) {
+    return (
+      <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-[#722F37] to-[#5a1f25]">
+        <Wine className="w-14 h-14 text-[#C9A84C]/50" />
+      </div>
+    )
+  }
+
+  return (
+    <Image
+      src={src}
+      alt={nome}
+      fill
+      className="object-cover group-hover:scale-105 transition-transform duration-500"
+      onError={() => setError(true)}
+    />
+  )
+}
+
 export default function CantineCard({ cantina }: { cantina: Cantina }) {
   const luogo = [cantina.comune, cantina.regione].filter(Boolean).join(', ')
 
@@ -18,18 +43,7 @@ export default function CantineCard({ cantina }: { cantina: Cantina }) {
       className="group block rounded-2xl overflow-hidden shadow-md hover:shadow-xl transition-all duration-300 bg-white"
     >
       <div className="relative h-48">
-        {cantina.foto_principale ? (
-          <Image
-            src={cantina.foto_principale}
-            alt={cantina.nome}
-            fill
-            className="object-cover group-hover:scale-105 transition-transform duration-500"
-          />
-        ) : (
-          <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-[#722F37] to-[#5a1f25]">
-            <Wine className="w-14 h-14 text-[#C9A84C]/50" />
-          </div>
-        )}
+        <CantinaCover src={cantina.foto_principale} nome={cantina.nome} />
         {cantina.verified && (
           <span className="absolute top-3 right-3 bg-[#C9A84C] text-white text-xs font-semibold px-2.5 py-1 rounded-full shadow">
             Verificata

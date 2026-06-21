@@ -4,22 +4,10 @@ import { useState, useEffect } from 'react'
 import Image from 'next/image'
 
 const SLIDES = [
-  {
-    src: 'https://images.unsplash.com/photo-1506377247377-2a5b3b417ebb?auto=format&fit=crop&w=1920&q=80',
-    alt: 'Vigneti toscani al tramonto',
-  },
-  {
-    src: 'https://images.unsplash.com/photo-1474722883778-792e7990302f?auto=format&fit=crop&w=1920&q=80',
-    alt: 'Filari di vite in estate',
-  },
-  {
-    src: 'https://images.unsplash.com/photo-1560493676-04071c5f467b?auto=format&fit=crop&w=1920&q=80',
-    alt: 'Cantina con vigneto',
-  },
-  {
-    src: 'https://images.unsplash.com/photo-1537002373567-97fa2a06bb03?auto=format&fit=crop&w=1920&q=80',
-    alt: 'Colline della Toscana',
-  },
+  'https://images.unsplash.com/photo-1528823872057-9c018a7a7553?w=1600',
+  'https://images.unsplash.com/photo-1506377247377-2a5b3b417ebb?w=1600',
+  'https://images.unsplash.com/photo-1510812431401-41d2bd2722f3?w=1600',
+  'https://images.unsplash.com/photo-1547595628-c61a29f496f0?w=1600',
 ]
 
 export default function HeroSlideshow() {
@@ -32,14 +20,14 @@ export default function HeroSlideshow() {
 
   return (
     <section className="relative h-[70vh] min-h-[520px] overflow-hidden">
-      {SLIDES.map((slide, i) => (
+      {SLIDES.map((src, i) => (
         <div
-          key={slide.src}
+          key={src}
           className={`absolute inset-0 transition-opacity duration-1000 ${i === current ? 'opacity-100' : 'opacity-0'}`}
         >
           <Image
-            src={slide.src}
-            alt={slide.alt}
+            src={src}
+            alt=""
             fill
             priority={i === 0}
             className="object-cover"
@@ -63,9 +51,9 @@ export default function HeroSlideshow() {
       </div>
 
       <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex gap-2">
-        {SLIDES.map((_, i) => (
+        {SLIDES.map((src, i) => (
           <button
-            key={i}
+            key={src}
             onClick={() => setCurrent(i)}
             aria-label={`Slide ${i + 1}`}
             className={`h-2 rounded-full transition-all duration-300 ${
