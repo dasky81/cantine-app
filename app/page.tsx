@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import { createServerClient } from '@/lib/supabase'
 import HeroSlideshow from '@/components/HeroSlideshow'
 import SearchSection from '@/components/SearchSection'
+import Footer from '@/components/Footer'
 import type { Cantina } from '@/lib/supabase'
 
 export const metadata: Metadata = {
@@ -37,21 +38,7 @@ export default async function HomePage() {
     <main className="flex flex-col min-h-screen">
       <HeroSlideshow />
       <SearchSection initialCantine={initialCantine} />
-      <footer className="bg-[#722F37] text-white/60 text-sm py-6 text-center">
-        <p className="font-medium text-white/80">
-          cantine.app · parte della rete{' '}
-          <span className="text-[#C9A84C] font-semibold">viaggi.app</span>
-        </p>
-        <p className="mt-2 space-x-3">
-          <a href="https://agriturismi.app" className="hover:text-white transition-colors">agriturismi.app</a>
-          <span>·</span>
-          <a href="https://crociera.app" className="hover:text-white transition-colors">crociera.app</a>
-          <span>·</span>
-          <a href="https://bnb.london" className="hover:text-white transition-colors">bnb.london</a>
-          <span>·</span>
-          <a href="https://green.camp" className="hover:text-white transition-colors">green.camp</a>
-        </p>
-      </footer>
+      <Footer />
     </main>
   )
 }
