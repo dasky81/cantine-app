@@ -185,9 +185,6 @@ export default async function CantinePage({ params }: { params: Promise<{ slug: 
                 <div className="h-56 rounded-xl overflow-hidden">
                   <MappaWrapper
                     markers={[{ id: c.id, slug: c.slug, nome: c.nome, lat: c.lat, lng: c.lng, regione: c.regione, foto_principale: c.foto_principale }]}
-                    center={[c.lat, c.lng]}
-                    zoom={13}
-                    className="h-full w-full"
                   />
                 </div>
               </section>
