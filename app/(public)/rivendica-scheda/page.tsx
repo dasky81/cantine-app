@@ -1,4 +1,5 @@
-﻿'use client'
+﻿export const dynamic = 'force-dynamic'
+'use client'
 
 import { useState, useEffect, Suspense } from 'react'
 import { Wine, CheckCircle } from 'lucide-react'
@@ -105,3 +106,4 @@ export default function RivendicaSchedaPage() {
     </div>
   )
 }
+
