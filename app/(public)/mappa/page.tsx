@@ -37,7 +37,7 @@ export default async function MappaPage() {
         </div>
       </div>
       <div className="flex-1">
-        <MappaWrapper markers={markers} center={[42.5, 12.5]} zoom={6} className="h-full w-full" />
+        <MappaWrapper markers={markers} />
       </div>
     </main>
   )
