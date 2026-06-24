@@ -1,7 +1,7 @@
 'use client'
 
-import { useEffect, useState } from 'react'
-import { Plus, Eye, EyeOff, Trash2, Sparkles, Save } from 'lucide-react'
+import { useEffect, useState, useRef } from 'react'
+import { Plus, Eye, EyeOff, Trash2, Sparkles, Save, Upload, X } from 'lucide-react'
 import { createClient } from '@/lib/supabase'
 import dynamic from 'next/dynamic'
 import { format } from 'date-fns'
@@ -15,6 +15,7 @@ interface Post {
   titolo: string
   contenuto: string | null
   excerpt: string | null
+  cover_url: string | null
   published: boolean
   published_at: string | null
   tag: string[] | null
@@ -28,8 +29,10 @@ export default function AdminBlogPage() {
   const [isNew, setIsNew] = useState(false)
   const [saving, setSaving] = useState(false)
   const [generating, setGenerating] = useState(false)
+  const [uploading, setUploading] = useState(false)
   const [aiPrompt, setAiPrompt] = useState('')
   const [tagInput, setTagInput] = useState('')
+  const fileRef = useRef<HTMLInputElement>(null)
   const supabase = createClient()
 
   async function loadPosts() {
@@ -39,9 +42,23 @@ export default function AdminBlogPage() {
 
   useEffect(() => { loadPosts() }, [])
 
+  async function handleCoverUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setUploading(true)
+    const ext = file.name.split('.').pop()
+    const path = `blog/cover-${Date.now()}.${ext}`
+    const { error } = await supabase.storage.from('cantine-foto').upload(path, file, { upsert: true })
+    if (!error) {
+      const { data: { publicUrl } } = supabase.storage.from('cantine-foto').getPublicUrl(path)
+      setField('cover_url', publicUrl)
+    }
+    setUploading(false)
+  }
+
   function newPost() {
     setSelected({
-      id: '', slug: '', titolo: '', contenuto: '', excerpt: '', published: false, published_at: null, tag: []
+      id: '', slug: '', titolo: '', contenuto: '', excerpt: '', cover_url: null, published: false, published_at: null, tag: []
     })
     setIsNew(true)
     setTagInput('')
@@ -59,6 +76,7 @@ export default function AdminBlogPage() {
       titolo: selected.titolo,
       contenuto: selected.contenuto,
       excerpt: selected.excerpt || selected.contenuto?.replace(/<[^>]+>/g, '').slice(0, 200),
+      cover_url: selected.cover_url,
       published: selected.published,
       published_at: selected.published ? (selected.published_at || new Date().toISOString()) : null,
       tag: selected.tag,
@@ -181,6 +199,32 @@ export default function AdminBlogPage() {
                 <input type="text" value={tagInput}
                   onChange={e => { setTagInput(e.target.value); setField('tag', e.target.value.split(',').map(t => t.trim()).filter(Boolean)) }}
                   className="w-full text-sm border border-gray-200 rounded-lg px-3 py-1.5 mt-1 focus:outline-none focus:ring-1 focus:ring-[#722F37]/30" />
+              </div>
+            </div>
+
+            {/* Cover image */}
+            <div className="mb-4 space-y-2">
+              <label className="text-xs text-gray-400 font-medium">Cover image</label>
+              {selected.cover_url && (
+                <div className="relative w-full">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={selected.cover_url} alt="" className="w-full h-36 object-cover rounded-xl" />
+                  <button type="button" onClick={() => setField('cover_url', null)}
+                    className="absolute top-2 right-2 bg-white rounded-full p-1 shadow hover:text-red-600 transition-colors">
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              )}
+              <div className="flex gap-2">
+                <input type="url" value={selected.cover_url ?? ''} onChange={e => setField('cover_url', e.target.value || null)}
+                  placeholder="https://..."
+                  className="flex-1 text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-1 focus:ring-[#722F37]/30" />
+                <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleCoverUpload} />
+                <button type="button" onClick={() => fileRef.current?.click()} disabled={uploading}
+                  className="flex items-center gap-1.5 text-xs border border-gray-200 px-3 py-2 rounded-lg hover:bg-gray-50 disabled:opacity-60 transition-colors whitespace-nowrap">
+                  <Upload className="w-3.5 h-3.5" />
+                  {uploading ? 'Carico...' : 'Carica'}
+                </button>
               </div>
             </div>
 

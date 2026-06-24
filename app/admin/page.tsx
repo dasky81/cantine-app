@@ -1,6 +1,7 @@
 import { createServerClient } from '@/lib/supabase-server'
 import { createAdminClient } from '@/lib/supabase-admin'
 import { Store, CheckCircle, Users, ClipboardCheck, Search, FileText } from 'lucide-react'
+import AdminCharts from '@/components/AdminChartsWrapper'
 
 export default async function AdminDashboard() {
   const supabase = await createServerClient()
@@ -53,6 +54,8 @@ export default async function AdminDashboard() {
           </div>
         ))}
       </div>
+
+      <AdminCharts />
     </div>
   )
 }

@@ -41,6 +41,10 @@ export default function AdminCantinePage() {
           <h1 className="text-2xl font-bold text-gray-900">Cantine</h1>
           <p className="text-gray-500 text-sm">{cantine.length} cantine caricate</p>
         </div>
+        <Link href="/admin/cantine/nuovo"
+          className="flex items-center gap-2 bg-[#722F37] text-white px-4 py-2.5 rounded-xl text-sm font-medium hover:bg-[#5a1f25] transition-colors">
+          + Nuova cantina
+        </Link>
       </div>
 
       {/* Filtri */}
