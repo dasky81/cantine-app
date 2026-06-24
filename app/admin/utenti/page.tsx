@@ -14,9 +14,9 @@ async function cambiaRuolo(formData: FormData) {
 
 const RUOLI = ['user', 'cantina_owner', 'admin']
 const RUOLO_LABEL: Record<string, string> = {
-  user: 'Visitatore',
+  user: 'Degustatore',
   cantina_owner: 'Titolare cantina',
-  admin: 'Admin',
+  admin: 'Super Admin',
 }
 
 export default async function UtentiPage() {

@@ -127,7 +127,22 @@ export default function Navbar() {
               </button>
 
               {dropdownOpen && (
-                <div className="absolute right-0 top-full mt-2 w-52 bg-white rounded-xl shadow-lg border border-gray-100 py-1 z-50">
+                <div className="absolute right-0 top-full mt-2 w-56 bg-white rounded-xl shadow-lg border border-gray-100 py-1 z-50">
+                  {/* Badge ruolo */}
+                  <div className="px-4 py-2.5 border-b border-gray-100">
+                    <p className="text-xs font-medium text-gray-900 truncate">
+                      {profile?.nome ?? user?.email?.split('@')[0]}
+                    </p>
+                    <span className={`inline-block mt-0.5 text-xs px-2 py-0.5 rounded-full font-medium ${
+                      profile?.role === 'admin'
+                        ? 'bg-amber-100 text-amber-700'
+                        : profile?.role === 'cantina_owner'
+                          ? 'bg-[#722F37]/10 text-[#722F37]'
+                          : 'bg-gray-100 text-gray-600'
+                    }`}>
+                      {{ user: 'Degustatore', cantina_owner: 'Titolare cantina', admin: 'Super Admin' }[profile?.role ?? 'user'] ?? profile?.role}
+                    </span>
+                  </div>
                   <Link href="/profilo" onClick={() => setDropdownOpen(false)}
                     className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50">
                     <User className="w-4 h-4" /> Profilo
@@ -136,9 +151,15 @@ export default function Navbar() {
                     className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50">
                     <Heart className="w-4 h-4" /> I miei preferiti
                   </Link>
+                  {profile?.role === 'cantina_owner' && (
+                    <Link href="/dashboard" onClick={() => setDropdownOpen(false)}
+                      className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-[#722F37] font-medium hover:bg-[#722F37]/5">
+                      <Settings className="w-4 h-4" /> Area titolare
+                    </Link>
+                  )}
                   {profile?.role === 'admin' && (
                     <Link href="/admin" onClick={() => setDropdownOpen(false)}
-                      className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-[#722F37] font-medium hover:bg-red-50">
+                      className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-amber-700 font-medium hover:bg-amber-50">
                       <Settings className="w-4 h-4" /> Pannello admin
                     </Link>
                   )}
@@ -198,8 +219,11 @@ export default function Navbar() {
           {user && (
             <div className="pt-2 border-t border-gray-100 space-y-1">
               <Link href="/profilo" className="block px-3 py-2 rounded-lg text-sm text-gray-700 hover:bg-gray-50">Profilo</Link>
+              {profile?.role === 'cantina_owner' && (
+                <Link href="/dashboard" className="block px-3 py-2 rounded-lg text-sm text-[#722F37] font-medium hover:bg-[#722F37]/5">Area titolare</Link>
+              )}
               {profile?.role === 'admin' && (
-                <Link href="/admin" className="block px-3 py-2 rounded-lg text-sm text-[#722F37] font-medium hover:bg-red-50">Admin</Link>
+                <Link href="/admin" className="block px-3 py-2 rounded-lg text-sm text-amber-700 font-medium hover:bg-amber-50">Pannello admin</Link>
               )}
               <button onClick={handleLogout} className="block w-full text-left px-3 py-2 rounded-lg text-sm text-gray-700 hover:bg-gray-50">
                 Esci

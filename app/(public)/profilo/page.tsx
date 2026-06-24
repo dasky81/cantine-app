@@ -86,9 +86,9 @@ export default function ProfiloPage() {
 
   const nomeCognome = [profile?.nome, profile?.cognome].filter(Boolean).join(' ') || profile?.email || 'Utente'
   const roleLabel: Record<string, string> = {
-    user: 'Visitatore',
+    user: 'Degustatore',
     cantina_owner: 'Titolare cantina',
-    admin: 'Amministratore',
+    admin: 'Super Admin',
   }
 
   return (

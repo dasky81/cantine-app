@@ -91,8 +91,8 @@ export default function RegistratiPage() {
         {/* Ruolo selector */}
         <div className="grid grid-cols-2 gap-3 mb-6">
           {([
-            { value: 'user', label: 'Visitatore', desc: 'Cerco cantine e degustazioni', Icon: User },
-            { value: 'cantina_owner', label: 'Titolare cantina', desc: 'Gestisco la mia cantina', Icon: Building2 },
+            { value: 'user', label: 'Degustatore', desc: 'Scopri e salva le cantine', Icon: User },
+            { value: 'cantina_owner', label: 'Titolare cantina', desc: 'Gestisci la tua cantina', Icon: Building2 },
           ] as const).map(({ value, label, desc, Icon }) => (
             <button
               key={value}
