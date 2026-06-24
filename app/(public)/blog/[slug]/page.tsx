@@ -10,7 +10,7 @@ import { it } from 'date-fns/locale'
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params
   const supabase = await createServerClient()
-  const { data } = await supabase.from('post').select('titolo, excerpt, cover_url').eq('slug', slug).single()
+  const { data } = await supabase.from('post').select('titolo, excerpt, cover_url').eq('slug', slug).maybeSingle()
   if (!data) return {}
   return {
     title: `${data.titolo} — cantine.app Blog`,
@@ -31,8 +31,7 @@ export default async function ArticoloPage({ params }: { params: Promise<{ slug:
     .from('post')
     .select('*')
     .eq('slug', slug)
-    .eq('published', true)
-    .single()
+    .maybeSingle()
 
   if (!post) notFound()
 

@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState, useRef } from 'react'
-import { Plus, Eye, EyeOff, Trash2, Sparkles, Save, Upload, X } from 'lucide-react'
+import { Plus, Eye, EyeOff, Trash2, Sparkles, Save, Upload, X, ExternalLink } from 'lucide-react'
 import { createClient } from '@/lib/supabase'
 import dynamic from 'next/dynamic'
 import { format } from 'date-fns'
@@ -21,7 +21,11 @@ interface Post {
   tag: string[] | null
 }
 
-const SLUG = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/gi, '-').replace(/^-|-$/g, '')
+const SLUG = (s: string) =>
+  s.toLowerCase()
+    .normalize('NFD').replace(/[̀-ͯ]/g, '')  // rimuove accenti: à→a, è→e
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-|-$/g, '')
 
 export default function AdminBlogPage() {
   const [posts, setPosts] = useState<Post[]>([])
@@ -70,9 +74,14 @@ export default function AdminBlogPage() {
 
   async function handleSave() {
     if (!selected) return
+    const computedSlug = (selected.slug.trim() || SLUG(selected.titolo)).trim()
+    if (!computedSlug) {
+      alert('Inserisci un titolo o uno slug prima di salvare.')
+      return
+    }
     setSaving(true)
     const payload = {
-      slug: selected.slug || SLUG(selected.titolo),
+      slug: computedSlug,
       titolo: selected.titolo,
       contenuto: selected.contenuto,
       excerpt: selected.excerpt || selected.contenuto?.replace(/<[^>]+>/g, '').slice(0, 200),
@@ -133,20 +142,31 @@ export default function AdminBlogPage() {
         </div>
         <div className="flex-1 overflow-y-auto">
           {posts.map(p => (
-            <button key={p.id} onClick={() => { setSelected(p); setIsNew(false); setTagInput((p.tag ?? []).join(', ')) }}
-              className={`w-full text-left px-4 py-3 border-b border-gray-50 hover:bg-gray-50 transition-colors ${selected?.id === p.id ? 'bg-[#722F37]/5' : ''}`}>
-              <p className="text-sm font-medium text-gray-900 truncate">{p.titolo}</p>
-              <div className="flex items-center gap-1.5 mt-0.5">
-                <span className={`text-xs ${p.published ? 'text-green-600' : 'text-gray-400'}`}>
-                  {p.published ? '● Pubblicato' : '○ Bozza'}
-                </span>
-                {p.published_at && (
-                  <span className="text-xs text-gray-400">
-                    · {format(new Date(p.published_at), 'd MMM', { locale: it })}
+            <div key={p.id}
+              className={`border-b border-gray-50 ${selected?.id === p.id ? 'bg-[#722F37]/5' : ''}`}>
+              <button onClick={() => { setSelected(p); setIsNew(false); setTagInput((p.tag ?? []).join(', ')) }}
+                className="w-full text-left px-4 py-3 hover:bg-gray-50 transition-colors">
+                <p className="text-sm font-medium text-gray-900 truncate">{p.titolo || <em className="text-gray-400">Senza titolo</em>}</p>
+                <div className="flex items-center gap-1.5 mt-0.5">
+                  <span className={`text-xs ${p.published ? 'text-green-600' : 'text-gray-400'}`}>
+                    {p.published ? '● Pubblicato' : '○ Bozza'}
                   </span>
-                )}
-              </div>
-            </button>
+                  {p.published_at && (
+                    <span className="text-xs text-gray-400">
+                      · {format(new Date(p.published_at), 'd MMM', { locale: it })}
+                    </span>
+                  )}
+                  {p.slug && (
+                    <a href={`/blog/${p.slug}`} target="_blank" rel="noreferrer"
+                      onClick={e => e.stopPropagation()}
+                      className="ml-auto text-gray-300 hover:text-[#722F37] transition-colors"
+                      title="Apri sul sito">
+                      <ExternalLink className="w-3 h-3" />
+                    </a>
+                  )}
+                </div>
+              </button>
+            </div>
           ))}
         </div>
       </div>
@@ -171,6 +191,12 @@ export default function AdminBlogPage() {
                   {selected.published ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
                   {selected.published ? 'Ritira' : 'Pubblica'}
                 </button>
+                {selected.slug && (
+                  <a href={`/blog/${selected.slug}`} target="_blank" rel="noreferrer"
+                    className="flex items-center gap-1.5 text-sm text-gray-500 border border-gray-200 px-4 py-2 rounded-xl hover:bg-gray-50 transition-colors">
+                    <ExternalLink className="w-3.5 h-3.5" /> Apri
+                  </a>
+                )}
               </div>
               {!isNew && (
                 <button onClick={() => handleDelete(selected.id)}
@@ -184,7 +210,13 @@ export default function AdminBlogPage() {
               type="text"
               placeholder="Titolo dell'articolo..."
               value={selected.titolo}
-              onChange={e => { setField('titolo', e.target.value); if (!selected.slug) setField('slug', SLUG(e.target.value)) }}
+              onChange={e => {
+              const titolo = e.target.value
+              setSelected(prev => {
+                if (!prev) return prev
+                return { ...prev, titolo, slug: prev.slug ? prev.slug : SLUG(titolo) }
+              })
+            }}
               className="w-full text-2xl font-bold text-gray-900 bg-transparent border-none outline-none placeholder-gray-300 mb-3"
             />
 

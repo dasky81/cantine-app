@@ -36,7 +36,7 @@ export default async function BlogPage() {
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            {(post ?? []).map(p => (
+            {(post ?? []).filter(p => !!p.slug).map(p => (
               <Link key={p.slug} href={`/blog/${p.slug}`}
                 className="group bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-shadow">
                 <div className="relative h-52 bg-[#722F37]/10">
