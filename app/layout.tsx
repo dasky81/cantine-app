@@ -9,6 +9,7 @@ const inter = Inter({ subsets: ['latin'], variable: '--font-sans' })
 export const metadata: Metadata = {
   title: "cantine.app — Il motore di ricerca delle cantine italiane",
   description: "Scopri le migliori cantine d'Italia. Cerca per regione, vino, certificazione biologica e prenota degustazioni.",
+  icons: { icon: '/icon.svg' },
   openGraph: {
     siteName: 'cantine.app',
     locale: 'it_IT',
