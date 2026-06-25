@@ -40,12 +40,12 @@ export default async function AdminDashboard() {
   const totalUtenti = userData?.users?.length ?? 0
 
   const KPI = [
-    { label: 'Cantine totali', value: totalCantine ?? 0, Icon: Store, color: 'text-[#722F37]', bg: 'bg-[#722F37]/10' },
-    { label: 'Cantine verificate', value: cantineVerificate ?? 0, Icon: CheckCircle, color: 'text-green-600', bg: 'bg-green-50' },
-    { label: 'Utenti registrati', value: totalUtenti, Icon: Users, color: 'text-blue-600', bg: 'bg-blue-50' },
-    { label: 'Rivendicazioni pending', value: rivendicazioniPending ?? 0, Icon: ClipboardCheck, color: 'text-orange-600', bg: 'bg-orange-50' },
-    { label: 'Ricerche AI oggi', value: ricercheOggi ?? 0, Icon: Search, color: 'text-purple-600', bg: 'bg-purple-50' },
-    { label: 'Post pubblicati', value: postPubblicati ?? 0, Icon: FileText, color: 'text-teal-600', bg: 'bg-teal-50' },
+    { label: 'Totale cantine',          value: totalCantine ?? 0,          Icon: Store,          color: 'text-violet-600',  bg: 'bg-violet-50'  },
+    { label: 'Cantine verificate',       value: cantineVerificate ?? 0,     Icon: CheckCircle,    color: 'text-green-600',   bg: 'bg-green-50'   },
+    { label: 'Utenti registrati',        value: totalUtenti,                 Icon: Users,          color: 'text-blue-600',    bg: 'bg-blue-50'    },
+    { label: 'Rivendicazioni pending',   value: rivendicazioniPending ?? 0, Icon: ClipboardCheck, color: 'text-orange-600',  bg: 'bg-orange-50'  },
+    { label: 'Articoli pubblicati',      value: postPubblicati ?? 0,        Icon: FileText,       color: 'text-indigo-600',  bg: 'bg-indigo-50'  },
+    { label: 'Ricerche AI oggi',         value: ricercheOggi ?? 0,          Icon: Search,         color: 'text-purple-600',  bg: 'bg-purple-50'  },
   ]
 
   return (
@@ -53,29 +53,25 @@ export default async function AdminDashboard() {
       <h1 className="text-2xl font-bold text-gray-900 mb-1">Panoramica</h1>
       <p className="text-gray-500 text-sm mb-8">Stato della piattaforma cantine.app</p>
 
-      {/* KPI */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5">
+      {/* KPI grid */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5 mb-8">
         {KPI.map(({ label, value, Icon, color, bg }) => (
           <div key={label} className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
-            <div className="flex items-start justify-between">
-              <div>
-                <p className="text-sm text-gray-500 mb-1">{label}</p>
-                <p className="text-3xl font-bold text-gray-900">{value.toLocaleString('it')}</p>
-              </div>
-              <div className={`w-10 h-10 rounded-xl ${bg} flex items-center justify-center`}>
-                <Icon className={`w-5 h-5 ${color}`} />
-              </div>
+            <div className={`w-10 h-10 rounded-xl ${bg} flex items-center justify-center mb-4`}>
+              <Icon className={`w-5 h-5 ${color}`} />
             </div>
+            <p className="text-3xl font-bold text-gray-900 mb-1">{value.toLocaleString('it-IT')}</p>
+            <p className="text-sm text-gray-500">{label}</p>
           </div>
         ))}
       </div>
 
-      {/* Grafici visite + top cantine/ricerche (client) */}
+      {/* Grafici */}
       <AdminCharts />
 
-      {/* Liste rapide server-side */}
+      {/* Liste rapide */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mt-6">
-        {/* Ultime 5 rivendicazioni pending */}
+        {/* Ultime rivendicazioni */}
         <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
           <div className="flex items-center justify-between mb-4">
             <h2 className="font-semibold text-gray-900">Ultime rivendicazioni</h2>
@@ -90,7 +86,7 @@ export default async function AdminDashboard() {
               {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
               {(ultimeRivendicazioni as any[]).map((r) => (
                 <li key={r.id} className="flex items-start gap-3">
-                  <span className="mt-0.5 w-2 h-2 rounded-full bg-orange-400 shrink-0" />
+                  <span className="mt-1.5 w-2 h-2 rounded-full bg-orange-400 shrink-0" />
                   <div className="min-w-0">
                     <p className="text-sm font-medium text-gray-900 truncate">
                       {Array.isArray(r.cantine) ? r.cantine[0]?.nome : r.cantine?.nome ?? '—'}
@@ -106,7 +102,7 @@ export default async function AdminDashboard() {
           )}
         </div>
 
-        {/* Ultime 5 ricerche AI */}
+        {/* Ultime ricerche AI */}
         <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
           <div className="flex items-center justify-between mb-4">
             <h2 className="font-semibold text-gray-900">Ultime ricerche AI</h2>
@@ -129,6 +125,13 @@ export default async function AdminDashboard() {
             </ul>
           )}
         </div>
+      </div>
+
+      {/* Footer link */}
+      <div className="flex justify-end mt-6">
+        <Link href="/admin/utenti" className="text-xs text-gray-400 hover:text-[#722F37] transition-colors">
+          Vedi analytics completi →
+        </Link>
       </div>
     </div>
   )

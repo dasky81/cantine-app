@@ -1,61 +1,62 @@
+'use client'
+
 import Link from 'next/link'
-import { Wine } from 'lucide-react'
-import { createServerClient } from '@/lib/supabase-server'
-import AdminNav from '@/components/AdminNav'
+import { usePathname } from 'next/navigation'
+import { LayoutDashboard, Store, ClipboardCheck, FileText, Users } from 'lucide-react'
 
-export default async function AdminLayout({ children }: { children: React.ReactNode }) {
-  const supabase = await createServerClient()
-  const { data: { user } } = await supabase.auth.getUser()
+const LINKS = [
+  { href: '/admin', label: 'Panoramica', Icon: LayoutDashboard, exact: true },
+  { href: '/admin/cantine', label: 'Cantine', Icon: Store },
+  { href: '/admin/rivendicazioni', label: 'Rivendicazioni', Icon: ClipboardCheck },
+  { href: '/admin/blog', label: 'Blog', Icon: FileText },
+  { href: '/admin/utenti', label: 'Utenti', Icon: Users },
+]
 
-  const { data: profile } = await supabase
-    .from('profiles').select('nome, cognome').eq('id', user?.id ?? '').maybeSingle()
-
-  const initials = profile?.nome && profile?.cognome
-    ? `${profile.nome[0]}${profile.cognome[0]}`.toUpperCase()
-    : user?.email?.[0]?.toUpperCase() ?? 'A'
+export default function AdminLayout({ children }: { children: React.ReactNode }) {
+  const pathname = usePathname()
 
   return (
-    <div className="flex min-h-screen bg-gray-50">
-      {/* Sidebar fissa */}
+    <div className="flex min-h-screen">
+      {/* Sidebar */}
       <aside className="w-56 bg-[#722F37] text-white flex flex-col shrink-0 fixed inset-y-0 left-0 z-20">
-        <div className="p-5 border-b border-white/10">
-          <Link href="/" className="flex items-center gap-2">
-            <Wine className="w-5 h-5 text-[#C9A84C]" />
-            <span className="font-bold text-sm tracking-wide">cantine.app</span>
-          </Link>
-          <span className="inline-block mt-2 text-[10px] font-bold tracking-widest uppercase text-[#C9A84C]/80 bg-[#C9A84C]/10 px-2 py-0.5 rounded">
+        {/* Logo */}
+        <div className="px-5 pt-6 pb-5">
+          <p className="text-[10px] font-semibold tracking-widest uppercase text-white/50 mb-1">
             Admin Panel
-          </span>
+          </p>
+          <p className="text-base font-bold text-white">cantine.app</p>
         </div>
 
-        <AdminNav />
+        {/* Nav */}
+        <nav className="flex-1 px-3 space-y-0.5">
+          {LINKS.map(({ href, label, Icon, exact }) => {
+            const active = exact ? pathname === href : pathname.startsWith(href)
+            return (
+              <Link key={href} href={href}
+                className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors ${
+                  active
+                    ? 'bg-white/15 text-white font-medium'
+                    : 'text-white/60 hover:text-white/90 hover:bg-white/10'
+                }`}>
+                <Icon className="w-4 h-4 shrink-0" />
+                {label}
+              </Link>
+            )
+          })}
+        </nav>
 
-        <div className="p-4 border-t border-white/10">
-          <Link href="/" className="text-xs text-white/50 hover:text-white/90 transition-colors">
+        {/* Footer */}
+        <div className="px-5 py-5 border-t border-white/10">
+          <Link href="/" className="text-xs text-white/40 hover:text-white/80 transition-colors">
             ← Torna al sito
           </Link>
         </div>
       </aside>
 
-      {/* Area principale */}
-      <div className="flex-1 ml-56 flex flex-col min-h-screen">
-        {/* Top bar */}
-        <header className="bg-white border-b border-gray-100 h-14 flex items-center justify-between px-6 sticky top-0 z-10">
-          <div className="flex items-center gap-2 text-xs text-gray-400">
-            <span className="font-semibold tracking-widest uppercase">Admin Panel</span>
-            <span className="text-gray-300">·</span>
-            <span>cantine.app</span>
-          </div>
-          <div
-            title={user?.email}
-            className="w-8 h-8 rounded-full bg-[#722F37] text-white text-xs font-bold flex items-center justify-center select-none"
-          >
-            {initials}
-          </div>
-        </header>
-
-        <main className="flex-1 overflow-auto">{children}</main>
-      </div>
+      {/* Contenuto principale */}
+      <main className="flex-1 ml-56 bg-gray-50 overflow-auto min-h-screen">
+        {children}
+      </main>
     </div>
   )
 }
