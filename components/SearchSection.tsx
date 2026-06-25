@@ -87,7 +87,7 @@ export default function SearchSection({ onResults, onReset, hasResults }: Props)
   }
 
   return (
-    <div className="max-w-3xl mx-auto px-4 py-8">
+    <div className="max-w-2xl mx-auto px-4 py-8">
       <form onSubmit={(e) => { e.preventDefault(); doSearch(query) }} className="space-y-3">
         {/* Input principale */}
         <div className="relative flex items-center bg-white rounded-2xl shadow-md border border-gray-100 overflow-hidden">

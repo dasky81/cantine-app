@@ -54,51 +54,55 @@ export default function HomepageClient({ initialCantine }: Props) {
   }
 
   return (
-    <div className="bg-[#FAF7F2]">
+    <div>
+      {/* Filtri — sfondo bianco con shadow */}
       <FiltriCategorie activeFilter={activeFilter} onFilter={handleFilter} />
 
-      <SearchSection
-        onResults={handleResults}
-        onReset={handleReset}
-        hasResults={searchResults !== null}
-      />
+      {/* Ricerca + griglia — sfondo bianco sporco */}
+      <div className="bg-[#FAF7F2]">
+        <SearchSection
+          onResults={handleResults}
+          onReset={handleReset}
+          hasResults={searchResults !== null}
+        />
 
-      {/* Griglia cantine */}
-      <div className="max-w-7xl mx-auto px-4 pb-16">
-        <div className="flex items-start justify-between mb-6">
-          <div>
-            {searchLabel ? (
-              <>
-                <h2 className="text-xl font-bold text-[#722F37]">{searchLabel}</h2>
-                <p className="text-sm text-gray-500 mt-0.5">
-                  {searchResults?.length ?? 0}{' '}
-                  {(searchResults?.length ?? 0) === 1 ? 'cantina trovata' : 'cantine trovate'}
-                </p>
-              </>
-            ) : (
-              <>
-                <h2 className="text-2xl font-bold text-gray-900">Le nostre cantine</h2>
-                <p className="text-gray-500 text-sm mt-1">
-                  Scopri le migliori cantine d&apos;Italia o usa la ricerca AI
-                </p>
-              </>
-            )}
+        {/* Griglia cantine */}
+        <div className="max-w-7xl mx-auto px-4 pb-16">
+          <div className="flex items-start justify-between mb-6">
+            <div>
+              {searchLabel ? (
+                <>
+                  <h2 className="text-xl font-bold text-[#722F37]">{searchLabel}</h2>
+                  <p className="text-sm text-gray-500 mt-0.5">
+                    {searchResults?.length ?? 0}{' '}
+                    {(searchResults?.length ?? 0) === 1 ? 'cantina trovata' : 'cantine trovate'}
+                  </p>
+                </>
+              ) : (
+                <>
+                  <h2 className="text-2xl font-bold text-gray-900">Le nostre cantine</h2>
+                  <p className="text-gray-500 text-sm mt-1">
+                    Scopri le migliori cantine d&apos;Italia o usa la ricerca AI
+                  </p>
+                </>
+              )}
+            </div>
           </div>
+
+          {displayCantine.length === 0 ? (
+            <div className="text-center py-20 text-gray-400">
+              <Search className="w-12 h-12 mx-auto mb-4 opacity-30" />
+              <p className="text-lg font-medium">Nessuna cantina trovata</p>
+              <p className="text-sm mt-1">Prova a modificare i criteri di ricerca</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+              {displayCantine.map((cantina) => (
+                <CantineCard key={cantina.id} cantina={cantina} />
+              ))}
+            </div>
+          )}
         </div>
-
-        {displayCantine.length === 0 ? (
-          <div className="text-center py-20 text-gray-400">
-            <Search className="w-12 h-12 mx-auto mb-4 opacity-30" />
-            <p className="text-lg font-medium">Nessuna cantina trovata</p>
-            <p className="text-sm mt-1">Prova a modificare i criteri di ricerca</p>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {displayCantine.map((cantina) => (
-              <CantineCard key={cantina.id} cantina={cantina} />
-            ))}
-          </div>
-        )}
       </div>
     </div>
   )
