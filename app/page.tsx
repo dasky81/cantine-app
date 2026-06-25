@@ -1,7 +1,8 @@
 import type { Metadata } from 'next'
 import { createServerClient } from '@/lib/supabase-server'
 import HeroSlideshow from '@/components/HeroSlideshow'
-import SearchSection from '@/components/SearchSection'
+import HomepageClient from '@/components/HomepageClient'
+import MeteoWidget from '@/components/MeteoWidget'
 import Footer from '@/components/Footer'
 import type { Cantina } from '@/lib/supabase'
 
@@ -28,7 +29,7 @@ export default async function HomePage() {
       .select('*')
       .order('featured', { ascending: false })
       .order('created_at', { ascending: false })
-      .limit(12)
+      .limit(24)
     initialCantine = (data as Cantina[]) ?? []
   } catch {
     // DB not yet seeded — show empty state
@@ -36,8 +37,16 @@ export default async function HomePage() {
 
   return (
     <main className="flex flex-col min-h-screen">
+      {/* 1. Hero con slideshow */}
       <HeroSlideshow />
-      <SearchSection initialCantine={initialCantine} />
+
+      {/* 2. Filtri + ricerca AI + griglia cantine */}
+      <HomepageClient initialCantine={initialCantine} />
+
+      {/* 3. Widget meteo */}
+      <MeteoWidget />
+
+      {/* 4. Footer */}
       <Footer />
     </main>
   )

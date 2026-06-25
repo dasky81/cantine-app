@@ -1,38 +1,55 @@
 'use client'
 
-import { useState } from 'react'
-import { Search, Loader2, X } from 'lucide-react'
-import CantineCard from './CantineCard'
+import { useState, useEffect } from 'react'
+import { Sparkles, Loader2, MapPin, X } from 'lucide-react'
 import type { Cantina } from '@/lib/supabase'
-import type { FiltriRicerca } from '@/lib/claude'
 
-interface SearchResult {
-  cantine: Cantina[]
-  filtri: FiltriRicerca
+const PLACEHOLDERS = [
+  'es. Barolo con degustazione biologica in Piemonte…',
+  'es. Cantina sul mare con vista e ristorante…',
+  'es. Degustazione Amarone sotto i 20 euro Veneto…',
+]
+
+const CHIPS = [
+  'Barolo',
+  'Brunello',
+  'Biologico',
+  'Degustazione Toscana',
+  'Cantina con ristorante',
+]
+
+interface Props {
+  onResults: (cantine: Cantina[], label: string) => void
+  onReset: () => void
+  hasResults: boolean
 }
 
-export default function SearchSection({ initialCantine }: { initialCantine: Cantina[] }) {
+export default function SearchSection({ onResults, onReset, hasResults }: Props) {
   const [query, setQuery] = useState('')
   const [loading, setLoading] = useState(false)
-  const [result, setResult] = useState<SearchResult | null>(null)
+  const [geoLoading, setGeoLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [pidx, setPidx] = useState(0)
 
-  async function handleSearch(e: React.FormEvent) {
-    e.preventDefault()
-    if (!query.trim()) return
+  useEffect(() => {
+    if (query) return
+    const id = setInterval(() => setPidx((i) => (i + 1) % PLACEHOLDERS.length), 3500)
+    return () => clearInterval(id)
+  }, [query])
 
+  async function doSearch(searchQuery: string) {
+    if (!searchQuery.trim()) return
     setLoading(true)
     setError(null)
-
     try {
       const res = await fetch('/api/cerca', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ query }),
+        body: JSON.stringify({ query: searchQuery }),
       })
       if (!res.ok) throw new Error('Errore')
-      const data: SearchResult = await res.json()
-      setResult(data)
+      const data = await res.json()
+      onResults(data.cantine ?? [], data.filtri?.query_friendly ?? searchQuery)
     } catch {
       setError('Errore nella ricerca. Riprova tra qualche secondo.')
     } finally {
@@ -40,96 +57,101 @@ export default function SearchSection({ initialCantine }: { initialCantine: Cant
     }
   }
 
-  function handleReset() {
-    setQuery('')
-    setResult(null)
+  async function handleGeoSearch() {
+    if (!navigator.geolocation) { setError('Geolocalizzazione non disponibile'); return }
+    setGeoLoading(true)
     setError(null)
+    navigator.geolocation.getCurrentPosition(
+      async ({ coords: { latitude: lat, longitude: lon } }) => {
+        try {
+          const res = await fetch(
+            `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json`,
+            { headers: { 'User-Agent': 'cantine.app/1.0' } }
+          )
+          const data = await res.json()
+          const city = data.address?.city ?? data.address?.town ?? data.address?.county ?? 'Italia'
+          const q = `cantine vicino a ${city}`
+          setQuery(q)
+          await doSearch(q)
+        } catch { setError('Impossibile ottenere la posizione') }
+        finally { setGeoLoading(false) }
+      },
+      () => { setError('Permesso di geolocalizzazione negato'); setGeoLoading(false) }
+    )
   }
 
-  const cantine = result ? result.cantine : initialCantine
+  function handleReset() {
+    setQuery('')
+    setError(null)
+    onReset()
+  }
 
   return (
-    <div className="bg-[#FAF7F2] min-h-screen">
-      {/* Search bar strip */}
-      <div className="bg-[#722F37] py-8 px-4 shadow-lg">
-        <form onSubmit={handleSearch} className="max-w-3xl mx-auto">
-          <div className="relative">
-            <input
-              type="text"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder="Cerca una cantina... es. Barolo con degustazione biologica in Piemonte"
-              className="w-full h-14 pl-6 pr-14 rounded-full bg-white text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#C9A84C] shadow-lg text-base"
-            />
-            <button
-              type="submit"
-              disabled={loading}
-              aria-label="Cerca"
-              className="absolute right-2 top-2 h-10 w-10 rounded-full bg-[#C9A84C] hover:bg-[#b8943d] text-white flex items-center justify-center transition-colors disabled:opacity-60 shadow"
-            >
-              {loading ? (
-                <Loader2 className="w-5 h-5 animate-spin" />
-              ) : (
-                <Search className="w-5 h-5" />
-              )}
-            </button>
-          </div>
-        </form>
-      </div>
+    <div className="max-w-3xl mx-auto px-4 py-8">
+      <form onSubmit={(e) => { e.preventDefault(); doSearch(query) }} className="space-y-3">
+        {/* Input principale */}
+        <div className="relative flex items-center bg-white rounded-2xl shadow-md border border-gray-100 overflow-hidden">
+          <Sparkles className="absolute left-4 w-5 h-5 text-[#C9A84C] shrink-0 pointer-events-none" />
+          <input
+            type="text"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder={PLACEHOLDERS[pidx]}
+            className="w-full pl-12 pr-36 py-4 text-base bg-transparent focus:outline-none text-gray-900 placeholder:text-gray-400"
+          />
+          <button
+            type="submit"
+            disabled={loading}
+            className="absolute right-2 bg-[#722F37] hover:bg-[#5a1f25] disabled:opacity-60 text-white text-sm font-medium px-4 py-2 rounded-xl transition-colors whitespace-nowrap"
+          >
+            {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Cerca con AI'}
+          </button>
+        </div>
 
-      {/* Results area */}
-      <div className="max-w-7xl mx-auto px-4 py-10">
-        {error && (
-          <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl text-red-700 text-sm flex items-center gap-2">
-            <X className="w-4 h-4 shrink-0" />
-            {error}
-          </div>
-        )}
+        {/* Riga secondaria */}
+        <div className="flex items-center gap-3 flex-wrap">
+          <button
+            type="button"
+            onClick={handleGeoSearch}
+            disabled={geoLoading}
+            className="flex items-center gap-1.5 text-sm text-gray-600 border border-gray-200 bg-white hover:bg-gray-50 px-3 py-1.5 rounded-xl transition-colors disabled:opacity-60"
+          >
+            {geoLoading
+              ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              : <MapPin className="w-3.5 h-3.5 text-[#722F37]" />
+            }
+            Vicino a me
+          </button>
 
-        <div className="mb-8 flex items-start justify-between gap-4">
-          <div>
-            {result ? (
-              <>
-                <h2 className="text-xl font-bold text-[#722F37]">{result.filtri.query_friendly}</h2>
-                <p className="text-sm text-gray-500 mt-0.5">
-                  {result.cantine.length}{' '}
-                  {result.cantine.length === 1 ? 'cantina trovata' : 'cantine trovate'}
-                </p>
-              </>
-            ) : (
-              <>
-                <h2 className="text-2xl font-bold text-gray-900">Le nostre cantine</h2>
-                <p className="text-gray-500 mt-1 text-sm">
-                  Scopri le migliori cantine d&apos;Italia o usa la ricerca AI sopra
-                </p>
-              </>
-            )}
+          {/* Chips suggerimento rapido */}
+          <div className="flex items-center gap-2 flex-wrap">
+            {CHIPS.map((chip) => (
+              <button
+                key={chip}
+                type="button"
+                onClick={() => { setQuery(chip); doSearch(chip) }}
+                className="text-xs text-gray-500 bg-gray-100 hover:bg-[#722F37]/10 hover:text-[#722F37] px-3 py-1 rounded-full transition-colors"
+              >
+                {chip}
+              </button>
+            ))}
           </div>
-          {result && (
+
+          {hasResults && (
             <button
+              type="button"
               onClick={handleReset}
-              className="text-sm text-gray-500 hover:text-[#722F37] flex items-center gap-1 shrink-0 transition-colors"
+              className="ml-auto flex items-center gap-1 text-xs text-gray-400 hover:text-[#722F37] transition-colors"
             >
-              <X className="w-4 h-4" />
-              Annulla ricerca
+              <X className="w-3.5 h-3.5" /> Annulla ricerca
             </button>
           )}
         </div>
 
-        {cantine.length === 0 ? (
-          <div className="text-center py-20 text-gray-400">
-            <Search className="w-12 h-12 mx-auto mb-4 opacity-30" />
-            <p className="text-lg font-medium">Nessuna cantina trovata</p>
-            <p className="text-sm mt-1">Prova a modificare i criteri di ricerca</p>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {cantine.map((cantina) => (
-              <CantineCard key={cantina.id} cantina={cantina} />
-            ))}
-          </div>
+        {error && (
+          <p className="text-sm text-red-600 bg-red-50 rounded-xl px-4 py-2">{error}</p>
         )}
-      </div>
+      </form>
     </div>
   )
 }
