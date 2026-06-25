@@ -34,7 +34,6 @@ export default function AdminBlogPage() {
   const [saving, setSaving] = useState(false)
   const [generating, setGenerating] = useState(false)
   const [uploading, setUploading] = useState(false)
-  const [aiPrompt, setAiPrompt] = useState('')
   const [tagInput, setTagInput] = useState('')
   const fileRef = useRef<HTMLInputElement>(null)
   const supabase = createClient()
@@ -155,19 +154,26 @@ export default function AdminBlogPage() {
   }
 
   async function handleAiGenerate() {
-    if (!aiPrompt || !selected) return
+    if (!selected?.titolo?.trim()) {
+      alert('Inserisci prima un titolo per generare l\'articolo.')
+      return
+    }
     setGenerating(true)
     try {
-      const res = await fetch('/api/genera-testo', {
+      const res = await fetch('/api/admin/blog/genera', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ prompt: aiPrompt, titolo: selected.titolo }),
+        body: JSON.stringify({ titolo: selected.titolo }),
       })
-      const { html } = await res.json()
-      setField('contenuto', html)
-    } catch { /* silent */ }
+      const json = await res.json()
+      if (!res.ok) throw new Error(json.error ?? `HTTP ${res.status}`)
+      setField('contenuto', json.html)
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Errore sconosciuto'
+      console.error('[blog] AI generate error:', msg)
+      alert(`Errore nella generazione AI: ${msg}`)
+    }
     setGenerating(false)
-    setAiPrompt('')
   }
 
   return (
@@ -304,23 +310,23 @@ export default function AdminBlogPage() {
 
             {/* AI generation */}
             <div className="mb-4 p-3 bg-amber-50 border border-amber-100 rounded-xl">
-              <div className="flex items-center gap-2 mb-2">
-                <Sparkles className="w-3.5 h-3.5 text-amber-600" />
-                <span className="text-xs font-medium text-amber-700">Genera con AI</span>
-              </div>
-              <div className="flex gap-2">
-                <input
-                  type="text"
-                  value={aiPrompt}
-                  onChange={e => setAiPrompt(e.target.value)}
-                  placeholder="Es: Scrivi un articolo su Barolo e Barbaresco..."
-                  className="flex-1 text-sm border border-amber-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-1 focus:ring-amber-300 bg-white"
-                />
-                <button onClick={handleAiGenerate} disabled={generating || !aiPrompt}
-                  className="text-xs bg-amber-600 text-white px-3 py-2 rounded-lg hover:bg-amber-700 disabled:opacity-60 transition-colors whitespace-nowrap">
-                  {generating ? 'Genero...' : 'Genera'}
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Sparkles className="w-3.5 h-3.5 text-amber-600" />
+                  <span className="text-xs font-medium text-amber-700">Genera articolo con AI</span>
+                </div>
+                <button onClick={handleAiGenerate}
+                  disabled={generating || !selected.titolo?.trim()}
+                  title={!selected.titolo?.trim() ? 'Inserisci prima un titolo' : undefined}
+                  className="text-xs bg-amber-600 text-white px-3 py-2 rounded-lg hover:bg-amber-700 disabled:opacity-60 disabled:cursor-not-allowed transition-colors whitespace-nowrap">
+                  {generating ? 'Genero...' : 'Genera dal titolo'}
                 </button>
               </div>
+              {selected.titolo?.trim() && (
+                <p className="text-xs text-amber-600/70 mt-1.5">
+                  Genererà un articolo completo (~800 parole) basato su: «{selected.titolo}»
+                </p>
+              )}
             </div>
 
             {/* Editor Tiptap */}
