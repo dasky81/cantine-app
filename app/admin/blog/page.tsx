@@ -91,10 +91,22 @@ export default function AdminBlogPage() {
       tag: selected.tag,
     }
     if (isNew) {
-      const { data } = await supabase.from('post').insert(payload).select().single()
-      if (data) { setSelected(data as Post); setIsNew(false) }
+      const { data, error } = await supabase.from('post').insert(payload).select().single()
+      if (error) {
+        console.error('[blog] INSERT error:', error)
+        alert(`Errore nel salvataggio: ${error.message}`)
+      } else if (data) {
+        setSelected(data as Post)
+        setIsNew(false)
+      }
     } else {
-      await supabase.from('post').update(payload).eq('id', selected.id)
+      const { error } = await supabase.from('post').update(payload).eq('id', selected.id)
+      if (error) {
+        console.error('[blog] UPDATE error:', error)
+        alert(`Errore nel salvataggio: ${error.message}`)
+        setSaving(false)
+        return
+      }
     }
     await loadPosts()
     setSaving(false)
@@ -108,8 +120,20 @@ export default function AdminBlogPage() {
   }
 
   async function handleTogglePublish(post: Post) {
-    const update = { published: !post.published, published_at: !post.published ? new Date().toISOString() : null }
-    await supabase.from('post').update(update).eq('id', post.id)
+    if (!post.id) {
+      alert('Salva prima il post prima di pubblicarlo.')
+      return
+    }
+    const update = {
+      published: !post.published,
+      published_at: !post.published ? new Date().toISOString() : null,
+    }
+    const { error } = await supabase.from('post').update(update).eq('id', post.id)
+    if (error) {
+      console.error('[blog] PUBLISH error:', error)
+      alert(`Errore nella pubblicazione: ${error.message}\n\nVerifica che la RLS policy su Supabase permetta UPDATE sulla tabella post.`)
+      return
+    }
     await loadPosts()
     if (selected?.id === post.id) setSelected(prev => prev ? { ...prev, ...update } : prev)
   }
@@ -187,7 +211,9 @@ export default function AdminBlogPage() {
                   <Save className="w-3.5 h-3.5" /> {saving ? 'Salvo...' : 'Salva'}
                 </button>
                 <button onClick={() => handleTogglePublish(selected)}
-                  className="flex items-center gap-1.5 text-sm border border-gray-200 px-4 py-2 rounded-xl hover:bg-gray-50 transition-colors">
+                  disabled={isNew}
+                  title={isNew ? 'Salva prima il post' : undefined}
+                  className="flex items-center gap-1.5 text-sm border border-gray-200 px-4 py-2 rounded-xl hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">
                   {selected.published ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
                   {selected.published ? 'Ritira' : 'Pubblica'}
                 </button>
