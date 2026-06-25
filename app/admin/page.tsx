@@ -50,8 +50,8 @@ export default async function AdminDashboard() {
 
   return (
     <div className="p-8">
-      <h1 className="text-2xl font-bold text-gray-900 mb-1">Dashboard</h1>
-      <p className="text-gray-500 text-sm mb-8">Panoramica di cantine.app</p>
+      <h1 className="text-2xl font-bold text-gray-900 mb-1">Panoramica</h1>
+      <p className="text-gray-500 text-sm mb-8">Stato della piattaforma cantine.app</p>
 
       {/* KPI */}
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5">

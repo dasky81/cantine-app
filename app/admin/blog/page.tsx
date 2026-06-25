@@ -167,7 +167,7 @@ export default function AdminBlogPage() {
       })
       const json = await res.json()
       if (!res.ok) throw new Error(json.error ?? `HTTP ${res.status}`)
-      setField('contenuto', json.html)
+      setField('contenuto', json.contenuto)
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Errore sconosciuto'
       console.error('[blog] AI generate error:', msg)
@@ -177,7 +177,7 @@ export default function AdminBlogPage() {
   }
 
   return (
-    <div className="flex h-screen overflow-hidden">
+    <div className="flex h-[calc(100vh-3.5rem)] overflow-hidden">
       {/* Lista articoli */}
       <div className="w-64 bg-white border-r border-gray-100 flex flex-col shrink-0">
         <div className="p-4 border-b border-gray-100">
