@@ -72,6 +72,20 @@ export default function AdminBlogPage() {
     setSelected(prev => prev ? { ...prev, [field]: value } : prev)
   }
 
+  async function apiCall(method: 'POST' | 'PATCH' | 'DELETE', body: object) {
+    const res = await fetch('/api/admin/blog', {
+      method,
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    })
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ error: `HTTP ${res.status}` }))
+      throw new Error(err.error ?? `HTTP ${res.status}`)
+    }
+    if (res.status === 204) return null
+    return res.json()
+  }
+
   async function handleSave() {
     if (!selected) return
     const computedSlug = (selected.slug.trim() || SLUG(selected.titolo)).trim()
@@ -90,33 +104,34 @@ export default function AdminBlogPage() {
       published_at: selected.published ? (selected.published_at || new Date().toISOString()) : null,
       tag: selected.tag,
     }
-    if (isNew) {
-      const { data, error } = await supabase.from('post').insert(payload).select().single()
-      if (error) {
-        console.error('[blog] INSERT error:', error)
-        alert(`Errore nel salvataggio: ${error.message}`)
-      } else if (data) {
-        setSelected(data as Post)
-        setIsNew(false)
+    try {
+      if (isNew) {
+        const data = await apiCall('POST', payload)
+        if (data) { setSelected(data as Post); setIsNew(false) }
+      } else {
+        const data = await apiCall('PATCH', { id: selected.id, ...payload })
+        if (data) setSelected(data as Post)
       }
-    } else {
-      const { error } = await supabase.from('post').update(payload).eq('id', selected.id)
-      if (error) {
-        console.error('[blog] UPDATE error:', error)
-        alert(`Errore nel salvataggio: ${error.message}`)
-        setSaving(false)
-        return
-      }
+      await loadPosts()
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Errore sconosciuto'
+      console.error('[blog] save error:', msg)
+      alert(`Errore nel salvataggio: ${msg}`)
     }
-    await loadPosts()
     setSaving(false)
   }
 
   async function handleDelete(id: string) {
     if (!confirm('Eliminare questo articolo?')) return
-    await supabase.from('post').delete().eq('id', id)
-    setSelected(null)
-    await loadPosts()
+    try {
+      await apiCall('DELETE', { id })
+      setSelected(null)
+      await loadPosts()
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Errore sconosciuto'
+      console.error('[blog] delete error:', msg)
+      alert(`Errore nell'eliminazione: ${msg}`)
+    }
   }
 
   async function handleTogglePublish(post: Post) {
@@ -128,14 +143,15 @@ export default function AdminBlogPage() {
       published: !post.published,
       published_at: !post.published ? new Date().toISOString() : null,
     }
-    const { error } = await supabase.from('post').update(update).eq('id', post.id)
-    if (error) {
-      console.error('[blog] PUBLISH error:', error)
-      alert(`Errore nella pubblicazione: ${error.message}\n\nVerifica che la RLS policy su Supabase permetta UPDATE sulla tabella post.`)
-      return
+    try {
+      await apiCall('PATCH', { id: post.id, ...update })
+      await loadPosts()
+      if (selected?.id === post.id) setSelected(prev => prev ? { ...prev, ...update } : prev)
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Errore sconosciuto'
+      console.error('[blog] publish error:', msg)
+      alert(`Errore nella pubblicazione: ${msg}`)
     }
-    await loadPosts()
-    if (selected?.id === post.id) setSelected(prev => prev ? { ...prev, ...update } : prev)
   }
 
   async function handleAiGenerate() {
