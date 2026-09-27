@@ -62,10 +62,9 @@ New-Item -ItemType Directory -Force -Path `
 # 5. Crea .env.local
 @"
 NEXT_PUBLIC_SUPABASE_URL=
-NEXT_PUBLIC_SUPABASE_ANON_KEY=
-SUPABASE_SERVICE_ROLE_KEY=
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=
 ANTHROPIC_API_KEY=
-SEED_SECRET=cantine2026
+SEED_SECRET=
 NEXT_PUBLIC_SITE_URL=https://cantine.app
 "@ | Out-File -FilePath ".env.local" -Encoding UTF8
 

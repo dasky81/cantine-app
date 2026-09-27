@@ -17,13 +17,14 @@ const ResponsiveContainer = dynamic(() => import('recharts').then(m => m.Respons
 
 interface DayPoint { giorno: string; visite: number }
 
-function buildDayMap(records: { created_at: string }[], days: number): DayPoint[] {
+function buildDayMap(records: { created_at: string | null }[], days: number): DayPoint[] {
   const map: Record<string, number> = {}
   for (let i = days - 1; i >= 0; i--) {
     const d = new Date(Date.now() - i * 86400000).toISOString().slice(0, 10)
     map[d] = 0
   }
   records.forEach(r => {
+    if (!r.created_at) return
     const d = r.created_at.slice(0, 10)
     if (d in map) map[d]++
   })

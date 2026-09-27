@@ -1,17 +1,22 @@
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import { NextRequest, NextResponse } from 'next/server'
+import { supabasePublishableKey, supabaseUrl } from '@/lib/supabase-config'
+import type { Database } from '@/lib/database.types'
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url)
   const code = searchParams.get('code')
-  const next = searchParams.get('next') ?? '/benvenuto'
+  const requestedNext = searchParams.get('next') ?? '/benvenuto'
+  const next = requestedNext.startsWith('/') && !requestedNext.startsWith('//')
+    ? requestedNext
+    : '/benvenuto'
 
   if (code) {
     const cookieStore = await cookies()
-    const supabase = createServerClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    const supabase = createServerClient<Database>(
+      supabaseUrl,
+      supabasePublishableKey,
       {
         cookies: {
           getAll() { return cookieStore.getAll() },

@@ -1,5 +1,4 @@
 import { createServerClient } from '@/lib/supabase-server'
-import { createAdminClient } from '@/lib/supabase-admin'
 import { revalidatePath } from 'next/cache'
 import { CheckCircle, XCircle } from 'lucide-react'
 import { format } from 'date-fns'
@@ -10,17 +9,17 @@ async function approva(formData: FormData) {
   const id = formData.get('id') as string
   const cantina_id = formData.get('cantina_id') as string
   const user_id = formData.get('user_id') as string
-  const admin = createAdminClient()
-  await admin.from('rivendicazioni').update({ status: 'approved' }).eq('id', id)
-  await admin.from('cantine').update({ owner_id: user_id, verified: true }).eq('id', cantina_id)
+  const supabase = await createServerClient()
+  await supabase.from('rivendicazioni').update({ status: 'approved' }).eq('id', id)
+  await supabase.from('cantine').update({ owner_id: user_id, verified: true }).eq('id', cantina_id)
   revalidatePath('/admin/rivendicazioni')
 }
 
 async function rifiuta(formData: FormData) {
   'use server'
   const id = formData.get('id') as string
-  const admin = createAdminClient()
-  await admin.from('rivendicazioni').update({ status: 'rejected' }).eq('id', id)
+  const supabase = await createServerClient()
+  await supabase.from('rivendicazioni').update({ status: 'rejected' }).eq('id', id)
   revalidatePath('/admin/rivendicazioni')
 }
 
@@ -49,11 +48,7 @@ export default async function RivendicazioniPage() {
           <div className="text-center py-16 text-gray-400">Nessuna rivendicazione</div>
         ) : (
           <div className="divide-y divide-gray-50">
-            {(rivendicazioni ?? []).map((r: {
-              id: string; cantina_id: string; user_id: string; nome_referente: string | null;
-              email_referente: string | null; telefono: string | null; messaggio: string | null;
-              status: string; created_at: string; cantine: { nome: string } | null
-            }) => (
+            {(rivendicazioni ?? []).map((r) => (
               <div key={r.id} className="p-5">
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex-1">
@@ -71,7 +66,9 @@ export default async function RivendicazioniPage() {
                       <p className="text-sm text-gray-500 mt-1 italic">&quot;{r.messaggio}&quot;</p>
                     )}
                     <p className="text-xs text-gray-400 mt-1">
-                      {format(new Date(r.created_at), "d MMM yyyy 'alle' HH:mm", { locale: it })}
+                      {r.created_at
+                        ? format(new Date(r.created_at), "d MMM yyyy 'alle' HH:mm", { locale: it })
+                        : '—'}
                     </p>
                   </div>
 

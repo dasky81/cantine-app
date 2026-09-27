@@ -16,18 +16,20 @@ interface DayPoint { giorno: string; visite: number; ricerche: number }
 interface TopItem { label: string; count: number }
 
 function buildDays(
-  visite: { created_at: string }[],
-  ricerche: { created_at: string }[],
+  visite: { created_at: string | null }[],
+  ricerche: { created_at: string | null }[],
 ): DayPoint[] {
   const map: Record<string, DayPoint> = {}
   for (let i = 6; i >= 0; i--) {
     const d = new Date(Date.now() - i * 86400000).toISOString().slice(0, 10)
     map[d] = { giorno: new Date(d).toLocaleDateString('it', { weekday: 'short', day: '2-digit' }), visite: 0, ricerche: 0 }
   }
-  visite.forEach(v => { const d = v.created_at.slice(0, 10); if (d in map) map[d].visite++ })
-  ricerche.forEach(r => { const d = r.created_at.slice(0, 10); if (d in map) map[d].ricerche++ })
+  visite.forEach(v => { if (v.created_at) { const d = v.created_at.slice(0, 10); if (d in map) map[d].visite++ } })
+  ricerche.forEach(r => { if (r.created_at) { const d = r.created_at.slice(0, 10); if (d in map) map[d].ricerche++ } })
   return Object.values(map)
 }
+
+const supabase = createClient()
 
 function topN(items: string[], n: number): TopItem[] {
   const counts: Record<string, number> = {}
@@ -43,7 +45,6 @@ export default function AdminCharts() {
   const [topCantine, setTopCantine] = useState<TopItem[]>([])
   const [topRicerche, setTopRicerche] = useState<TopItem[]>([])
   const [loading, setLoading] = useState(true)
-  const supabase = createClient()
 
   useEffect(() => {
     async function load() {
@@ -79,7 +80,7 @@ export default function AdminCharts() {
       setLoading(false)
     }
     load()
-  }, [supabase])
+  }, [])
 
   if (loading) return <div className="text-gray-400 text-sm py-6">Caricamento grafici...</div>
 

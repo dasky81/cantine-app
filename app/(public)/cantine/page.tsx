@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import Link from 'next/link'
 import { createServerClient } from '@/lib/supabase-server'
 import CantineCard from '@/components/CantineCard'
 import type { Cantina } from '@/lib/supabase'
@@ -38,25 +39,25 @@ export default async function CantineListPage({
       <div className="max-w-7xl mx-auto px-4 py-8">
         {/* Filtri */}
         <div className="flex flex-wrap gap-3 mb-8">
-          <a href="/cantine"
+          <Link href="/cantine"
             className={`text-sm px-4 py-2 rounded-full border transition-colors ${!regione && !cert ? 'bg-[#722F37] text-white border-[#722F37]' : 'border-gray-200 text-gray-600 hover:border-[#722F37]'}`}>
             Tutte
-          </a>
+          </Link>
           {['Biologico', 'Biodinamico', 'Sostenibile'].map(c => (
-            <a key={c} href={`/cantine?cert=${c}`}
+            <Link key={c} href={`/cantine?cert=${c}`}
               className={`text-sm px-4 py-2 rounded-full border transition-colors ${cert === c ? 'bg-green-600 text-white border-green-600' : 'border-gray-200 text-gray-600 hover:border-green-600'}`}>
               {c}
-            </a>
+            </Link>
           ))}
         </div>
 
         {/* Regioni */}
         <div className="flex flex-wrap gap-2 mb-8">
           {REGIONI.map(r => (
-            <a key={r} href={`/cantine?regione=${r}`}
+            <Link key={r} href={`/cantine?regione=${r}`}
               className={`text-xs px-3 py-1.5 rounded-full border transition-colors ${regione === r ? 'bg-[#722F37] text-white border-[#722F37]' : 'border-gray-200 text-gray-600 hover:border-[#722F37]'}`}>
               {r}
-            </a>
+            </Link>
           ))}
         </div>
 

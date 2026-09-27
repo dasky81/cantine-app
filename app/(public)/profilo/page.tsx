@@ -19,6 +19,8 @@ interface Profile {
   created_at: string
 }
 
+const supabase = createClient()
+
 export default function ProfiloPage() {
   const [profile, setProfile] = useState<Profile | null>(null)
   const [preferiti, setPreferiti] = useState<Cantina[]>([])
@@ -29,7 +31,6 @@ export default function ProfiloPage() {
   const [editCognome, setEditCognome] = useState('')
   const [saving, setSaving] = useState(false)
   const router = useRouter()
-  const supabase = createClient()
 
   useEffect(() => {
     async function load() {
@@ -60,7 +61,7 @@ export default function ProfiloPage() {
       setLoading(false)
     }
     load()
-  }, [])
+  }, [router])
 
   async function handleLogout() {
     await supabase.auth.signOut()
@@ -115,7 +116,9 @@ export default function ProfiloPage() {
               </div>
               <p className="text-gray-500 text-sm">{profile?.email}</p>
               <p className="text-gray-400 text-xs mt-0.5">
-                Iscritto il {format(new Date(profile?.created_at ?? Date.now()), 'd MMMM yyyy', { locale: it })}
+                {profile?.created_at
+                  ? `Iscritto il ${format(new Date(profile.created_at), 'd MMMM yyyy', { locale: it })}`
+                  : 'Data di iscrizione non disponibile'}
               </p>
               <div className="mt-2 flex flex-wrap gap-2">
                 <span className="text-xs px-2.5 py-1 bg-[#722F37]/10 text-[#722F37] rounded-full flex items-center gap-1.5">

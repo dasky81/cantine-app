@@ -60,7 +60,6 @@ export default function MeteoWidget() {
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    setTime(new Date())
     const id = setInterval(() => setTime(new Date()), 1000)
     return () => clearInterval(id)
   }, [])

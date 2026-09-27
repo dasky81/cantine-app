@@ -21,6 +21,8 @@ interface Post {
   tag: string[] | null
 }
 
+const supabase = createClient()
+
 const SLUG = (s: string) =>
   s.toLowerCase()
     .normalize('NFD').replace(/[̀-ͯ]/g, '')  // rimuove accenti: à→a, è→e
@@ -36,14 +38,20 @@ export default function AdminBlogPage() {
   const [uploading, setUploading] = useState(false)
   const [tagInput, setTagInput] = useState('')
   const fileRef = useRef<HTMLInputElement>(null)
-  const supabase = createClient()
 
   async function loadPosts() {
     const { data } = await supabase.from('post').select('*').order('created_at', { ascending: false })
     setPosts((data as Post[]) ?? [])
   }
 
-  useEffect(() => { loadPosts() }, [])
+  useEffect(() => {
+    let active = true
+    supabase.from('post').select('*').order('created_at', { ascending: false })
+      .then(({ data }) => {
+        if (active) setPosts((data as Post[]) ?? [])
+      })
+    return () => { active = false }
+  }, [])
 
   async function handleCoverUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]

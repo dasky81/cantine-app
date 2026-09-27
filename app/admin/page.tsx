@@ -1,5 +1,4 @@
 import { createServerClient } from '@/lib/supabase-server'
-import { createAdminClient } from '@/lib/supabase-admin'
 import { Store, CheckCircle, Users, ClipboardCheck, Search, FileText } from 'lucide-react'
 import Link from 'next/link'
 import { format } from 'date-fns'
@@ -8,7 +7,6 @@ import AdminCharts from '@/components/AdminChartsWrapper'
 
 export default async function AdminDashboard() {
   const supabase = await createServerClient()
-  const admin = createAdminClient()
 
   const [
     { count: totalCantine },
@@ -36,13 +34,14 @@ export default async function AdminDashboard() {
       .limit(5),
   ])
 
-  const { data: userData } = await admin.auth.admin.listUsers()
-  const totalUtenti = userData?.users?.length ?? 0
+  const { count: totalUtenti } = await supabase
+    .from('profiles')
+    .select('*', { count: 'exact', head: true })
 
   const KPI = [
     { label: 'Totale cantine',          value: totalCantine ?? 0,          Icon: Store,          color: 'text-violet-600',  bg: 'bg-violet-50'  },
     { label: 'Cantine verificate',       value: cantineVerificate ?? 0,     Icon: CheckCircle,    color: 'text-green-600',   bg: 'bg-green-50'   },
-    { label: 'Utenti registrati',        value: totalUtenti,                 Icon: Users,          color: 'text-blue-600',    bg: 'bg-blue-50'    },
+    { label: 'Utenti registrati',        value: totalUtenti ?? 0,            Icon: Users,          color: 'text-blue-600',    bg: 'bg-blue-50'    },
     { label: 'Rivendicazioni pending',   value: rivendicazioniPending ?? 0, Icon: ClipboardCheck, color: 'text-orange-600',  bg: 'bg-orange-50'  },
     { label: 'Articoli pubblicati',      value: postPubblicati ?? 0,        Icon: FileText,       color: 'text-indigo-600',  bg: 'bg-indigo-50'  },
     { label: 'Ricerche AI oggi',         value: ricercheOggi ?? 0,          Icon: Search,         color: 'text-purple-600',  bg: 'bg-purple-50'  },
@@ -111,13 +110,13 @@ export default async function AdminDashboard() {
             <p className="text-sm text-gray-400">Nessuna ricerca recente</p>
           ) : (
             <ul className="space-y-3">
-              {ultimeRicerche.map((r: { id: string; query: string; created_at: string }) => (
+              {ultimeRicerche.map((r) => (
                 <li key={r.id} className="flex items-start gap-3">
                   <Search className="w-3.5 h-3.5 text-purple-400 mt-0.5 shrink-0" />
                   <div className="min-w-0">
                     <p className="text-sm text-gray-700 truncate">{r.query}</p>
                     <p className="text-xs text-gray-400">
-                      {format(new Date(r.created_at), 'd MMM, HH:mm', { locale: it })}
+                      {r.created_at ? format(new Date(r.created_at), 'd MMM, HH:mm', { locale: it }) : '—'}
                     </p>
                   </div>
                 </li>

@@ -3,19 +3,20 @@
 -- Esegui nell'SQL Editor di Supabase
 -- ============================================================
 
--- Abilita estensione vettori per ricerca semantica
-CREATE EXTENSION IF NOT EXISTS vector;
+-- Abilita estensione vettori per ricerca semantica fuori dallo schema esposto.
+CREATE EXTENSION IF NOT EXISTS vector WITH SCHEMA extensions;
+CREATE SCHEMA IF NOT EXISTS private;
 
 -- ============================================================
 -- TABELLE
 -- ============================================================
 
 CREATE TABLE profiles (
-  id UUID REFERENCES auth.users PRIMARY KEY,
+  id UUID REFERENCES auth.users ON DELETE CASCADE PRIMARY KEY,
   email TEXT,
   nome TEXT,
   cognome TEXT,
-  role TEXT DEFAULT 'user',
+  role TEXT NOT NULL DEFAULT 'user' CHECK (role IN ('user', 'cantina_owner', 'admin')),
   avatar_url TEXT,
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
@@ -93,9 +94,36 @@ CREATE TABLE rivendicazioni (
   email_referente TEXT,
   telefono TEXT,
   messaggio TEXT,
-  status TEXT DEFAULT 'pending',
+  status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'approved', 'rejected')),
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
+
+CREATE TABLE visite_log (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  path TEXT NOT NULL,
+  referrer TEXT,
+  user_agent TEXT,
+  user_id UUID REFERENCES profiles(id) ON DELETE SET NULL,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Centralizza il controllo admin evitando policy RLS ricorsive su profiles.
+CREATE OR REPLACE FUNCTION private.is_admin()
+RETURNS BOOLEAN
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path = ''
+AS $$
+  SELECT EXISTS (
+    SELECT 1 FROM public.profiles
+    WHERE id = (SELECT auth.uid()) AND role = 'admin'
+  );
+$$;
+
+REVOKE ALL ON FUNCTION private.is_admin() FROM PUBLIC, anon;
+GRANT USAGE ON SCHEMA private TO authenticated;
+GRANT EXECUTE ON FUNCTION private.is_admin() TO authenticated;
 
 -- ============================================================
 -- ROW LEVEL SECURITY
@@ -107,54 +135,105 @@ ALTER TABLE post ENABLE ROW LEVEL SECURITY;
 ALTER TABLE ricerche_log ENABLE ROW LEVEL SECURITY;
 ALTER TABLE preferiti ENABLE ROW LEVEL SECURITY;
 ALTER TABLE rivendicazioni ENABLE ROW LEVEL SECURITY;
+ALTER TABLE visite_log ENABLE ROW LEVEL SECURITY;
 
 -- Cantine: lettura pubblica
-CREATE POLICY "cantine_select_public" ON cantine FOR SELECT USING (true);
-CREATE POLICY "cantine_all_admin" ON cantine FOR ALL USING (
-  EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin')
-);
+CREATE POLICY "cantine_select_public" ON cantine FOR SELECT TO anon, authenticated USING (true);
+CREATE POLICY "cantine_insert_admin" ON cantine FOR INSERT TO authenticated
+  WITH CHECK ((SELECT private.is_admin()));
+CREATE POLICY "cantine_update_admin" ON cantine FOR UPDATE TO authenticated
+  USING ((SELECT private.is_admin())) WITH CHECK ((SELECT private.is_admin()));
+CREATE POLICY "cantine_delete_admin" ON cantine FOR DELETE TO authenticated
+  USING ((SELECT private.is_admin()));
+CREATE POLICY "cantine_update_owner" ON cantine FOR UPDATE TO authenticated
+  USING ((SELECT auth.uid()) = owner_id)
+  WITH CHECK ((SELECT auth.uid()) = owner_id);
 
 -- Post: lettura pubblica se pubblicati
-CREATE POLICY "post_select_published" ON post FOR SELECT USING (published = true);
-CREATE POLICY "post_all_admin" ON post FOR ALL USING (
-  EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin')
-);
+CREATE POLICY "post_select_published" ON post FOR SELECT TO anon, authenticated USING (published = true);
+CREATE POLICY "post_select_admin" ON post FOR SELECT TO authenticated USING ((SELECT private.is_admin()));
+CREATE POLICY "post_insert_admin" ON post FOR INSERT TO authenticated
+  WITH CHECK ((SELECT private.is_admin()));
+CREATE POLICY "post_update_admin" ON post FOR UPDATE TO authenticated
+  USING ((SELECT private.is_admin())) WITH CHECK ((SELECT private.is_admin()));
+CREATE POLICY "post_delete_admin" ON post FOR DELETE TO authenticated
+  USING ((SELECT private.is_admin()));
 
 -- Profili: ogni utente vede/modifica il proprio
-CREATE POLICY "profiles_select_own" ON profiles FOR SELECT USING (auth.uid() = id);
-CREATE POLICY "profiles_update_own" ON profiles FOR UPDATE USING (auth.uid() = id);
-CREATE POLICY "profiles_insert_own" ON profiles FOR INSERT WITH CHECK (auth.uid() = id);
+CREATE POLICY "profiles_select_own" ON profiles FOR SELECT TO authenticated USING ((SELECT auth.uid()) = id);
+CREATE POLICY "profiles_select_admin" ON profiles FOR SELECT TO authenticated USING ((SELECT private.is_admin()));
+CREATE POLICY "profiles_update_own" ON profiles FOR UPDATE TO authenticated
+  USING ((SELECT auth.uid()) = id) WITH CHECK ((SELECT auth.uid()) = id);
+CREATE POLICY "profiles_update_admin" ON profiles FOR UPDATE TO authenticated
+  USING ((SELECT private.is_admin())) WITH CHECK ((SELECT private.is_admin()));
+CREATE POLICY "profiles_insert_own" ON profiles FOR INSERT TO authenticated
+  WITH CHECK ((SELECT auth.uid()) = id);
 
 -- Preferiti: ogni utente gestisce i propri
-CREATE POLICY "preferiti_own" ON preferiti USING (auth.uid() = user_id);
+CREATE POLICY "preferiti_select_own" ON preferiti FOR SELECT TO authenticated USING ((SELECT auth.uid()) = user_id);
+CREATE POLICY "preferiti_insert_own" ON preferiti FOR INSERT TO authenticated WITH CHECK ((SELECT auth.uid()) = user_id);
+CREATE POLICY "preferiti_delete_own" ON preferiti FOR DELETE TO authenticated USING ((SELECT auth.uid()) = user_id);
 
 -- Ricerche log: insert pubblico
-CREATE POLICY "ricerche_insert" ON ricerche_log FOR INSERT WITH CHECK (true);
+CREATE POLICY "ricerche_insert" ON ricerche_log FOR INSERT TO anon, authenticated
+  WITH CHECK (user_id IS NULL OR (SELECT auth.uid()) = user_id);
+CREATE POLICY "ricerche_select_admin" ON ricerche_log FOR SELECT TO authenticated
+  USING ((SELECT private.is_admin()));
 
 -- Rivendicazioni: chiunque può inviare, admin gestisce
-CREATE POLICY "rivendicazioni_insert" ON rivendicazioni FOR INSERT WITH CHECK (auth.uid() = user_id);
-CREATE POLICY "rivendicazioni_select_own" ON rivendicazioni FOR SELECT USING (auth.uid() = user_id);
-CREATE POLICY "rivendicazioni_all_admin" ON rivendicazioni FOR ALL USING (
-  EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin')
-);
+CREATE POLICY "rivendicazioni_insert" ON rivendicazioni FOR INSERT TO authenticated
+  WITH CHECK ((SELECT auth.uid()) = user_id);
+CREATE POLICY "rivendicazioni_select_own" ON rivendicazioni FOR SELECT TO authenticated
+  USING ((SELECT auth.uid()) = user_id);
+CREATE POLICY "rivendicazioni_select_admin" ON rivendicazioni FOR SELECT TO authenticated
+  USING ((SELECT private.is_admin()));
+CREATE POLICY "rivendicazioni_update_admin" ON rivendicazioni FOR UPDATE TO authenticated
+  USING ((SELECT private.is_admin())) WITH CHECK ((SELECT private.is_admin()));
+
+CREATE POLICY "visite_insert_public" ON visite_log FOR INSERT TO anon, authenticated
+  WITH CHECK (user_id IS NULL OR (SELECT auth.uid()) = user_id);
+CREATE POLICY "visite_select_admin" ON visite_log FOR SELECT TO authenticated
+  USING ((SELECT private.is_admin()));
 
 -- ============================================================
 -- TRIGGER: auto-crea profilo al signup
 -- ============================================================
 
-CREATE OR REPLACE FUNCTION public.handle_new_user()
+CREATE OR REPLACE FUNCTION private.handle_new_user()
 RETURNS TRIGGER AS $$
 BEGIN
-  INSERT INTO public.profiles (id, email)
-  VALUES (NEW.id, NEW.email)
+  INSERT INTO public.profiles (id, email, role)
+  VALUES (
+    NEW.id,
+    NEW.email,
+    CASE WHEN lower(NEW.email) = 'davide.sarrecchia@gmail.com' THEN 'admin' ELSE 'user' END
+  )
   ON CONFLICT (id) DO NOTHING;
   RETURN NEW;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = '';
+
+REVOKE ALL ON FUNCTION private.handle_new_user() FROM PUBLIC, anon, authenticated;
 
 CREATE TRIGGER on_auth_user_created
   AFTER INSERT ON auth.users
-  FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
+  FOR EACH ROW EXECUTE FUNCTION private.handle_new_user();
+
+CREATE OR REPLACE FUNCTION private.protect_profile_role()
+RETURNS TRIGGER AS $$
+BEGIN
+  IF NEW.role IS DISTINCT FROM OLD.role AND NOT private.is_admin() THEN
+    RAISE EXCEPTION 'Only administrators can change user roles';
+  END IF;
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = '';
+
+REVOKE ALL ON FUNCTION private.protect_profile_role() FROM PUBLIC, anon, authenticated;
+
+CREATE TRIGGER protect_profile_role_before_update
+  BEFORE UPDATE ON profiles
+  FOR EACH ROW EXECUTE FUNCTION private.protect_profile_role();
 
 -- ============================================================
 -- INDICI per performance
@@ -165,6 +244,11 @@ CREATE INDEX idx_cantine_slug ON cantine(slug);
 CREATE INDEX idx_cantine_featured ON cantine(featured);
 CREATE INDEX idx_post_slug ON post(slug);
 CREATE INDEX idx_post_published ON post(published, published_at);
+CREATE INDEX idx_preferiti_user ON preferiti(user_id);
+CREATE INDEX idx_rivendicazioni_status ON rivendicazioni(status, created_at DESC);
+CREATE INDEX idx_ricerche_created_at ON ricerche_log(created_at DESC);
+CREATE INDEX idx_visite_log_path ON visite_log(path, created_at DESC);
+CREATE INDEX idx_visite_log_created_at ON visite_log(created_at DESC);
 
 -- ============================================================
 -- SEED: 40 cantine reali italiane
@@ -267,6 +351,6 @@ INSERT INTO cantine (slug, nome, descrizione_breve, regione, provincia, comune, 
 ('montecucco-sangiovese', 'Col d''Orcia', 'Vasta tenuta ai piedi del Monte Amiata con Brunello e Montecucco eccellenti.', 'Toscana', 'Grosseto', 'Sant''Angelo in Colle', 42.8947, 11.3841, ARRAY['Brunello di Montalcino', 'Rosso di Montalcino', 'Montecucco'], ARRAY['DOCG', 'DOC'], ARRAY['Biologico'], ARRAY['Degustazione', 'Visita tenuta', 'Agriturismo', 'Vendita diretta'], '€22–50 a persona', 'https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=800', TRUE, FALSE);
 
 -- ============================================================
--- SET ADMIN (sostituisci con la tua email)
+-- SET ADMIN (fallback per utenti già esistenti)
 -- ============================================================
 -- UPDATE profiles SET role = 'admin' WHERE email = 'davide.sarrecchia@gmail.com';

@@ -1,7 +1,5 @@
 import Anthropic from '@anthropic-ai/sdk'
 
-const client = new Anthropic()
-
 export interface FiltriRicerca {
   regione: string | null
   vini: string[]
@@ -38,7 +36,45 @@ Regole:
 - "lingua": lingua richiesta per la visita o null
 - "query_friendly": riassunto leggibile della ricerca (es. "Cantine biologiche in Toscana con degustazione")`
 
+const REGIONI = ['Abruzzo', 'Basilicata', 'Calabria', 'Campania', 'Emilia-Romagna',
+  'Friuli-Venezia Giulia', 'Lazio', 'Liguria', 'Lombardia', 'Marche', 'Molise',
+  'Piemonte', 'Puglia', 'Sardegna', 'Sicilia', 'Toscana', 'Trentino-Alto Adige',
+  'Umbria', "Valle d'Aosta", 'Veneto']
+
+const VINI = ['Barolo', 'Barbaresco', 'Brunello di Montalcino', 'Chianti Classico',
+  'Amarone', 'Prosecco', "Nero d'Avola", 'Primitivo', 'Vermentino',
+  'Montepulciano', 'Franciacorta', 'Sagrantino', 'Etna Rosso', 'Falanghina']
+
+const CERTIFICAZIONI = ['Biologico', 'Biodinamico', 'Sostenibile']
+const SERVIZI = ['Vendita diretta', 'Ristorante', 'Pernottamento', 'Enoteca', 'Degustazione']
+
+function includesTerm(query: string, value: string) {
+  return query.includes(value.toLocaleLowerCase('it-IT'))
+}
+
+export function parseRicercaLocale(query: string): FiltriRicerca {
+  const normalized = query.toLocaleLowerCase('it-IT')
+  const regione = REGIONI.find((item) => includesTerm(normalized, item)) ?? null
+  const vini = VINI.filter((item) => includesTerm(normalized, item))
+  const certificazioni = CERTIFICAZIONI.filter((item) => includesTerm(normalized, item))
+  const servizi = SERVIZI.filter((item) => includesTerm(normalized, item))
+  const prezzo = normalized.match(/(?:sotto|max|massimo|entro)\s*(?:i\s*)?(\d{1,3})/)
+
+  return {
+    regione,
+    vini,
+    certificazioni,
+    servizi,
+    prezzo_max: prezzo ? Number(prezzo[1]) : null,
+    lingua: null,
+    query_friendly: query,
+  }
+}
+
 export async function parseRicercaAI(query: string): Promise<FiltriRicerca> {
+  if (!process.env.ANTHROPIC_API_KEY) return parseRicercaLocale(query)
+
+  const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
   const message = await client.messages.create({
     model: 'claude-sonnet-4-6',
     max_tokens: 512,

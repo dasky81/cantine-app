@@ -21,6 +21,7 @@ const NAV_LINKS = [
 ]
 
 const AUTH_ROUTES = ['/login', '/registrati', '/benvenuto']
+const supabase = createClient()
 
 export default function Navbar() {
   const pathname = usePathname()
@@ -29,7 +30,6 @@ export default function Navbar() {
   const [user, setUser] = useState<SupabaseUser | null>(null)
   const [profile, setProfile] = useState<Profile | null>(null)
   const dropdownRef = useRef<HTMLDivElement>(null)
-  const supabase = createClient()
 
   useEffect(() => {
     async function loadUser() {
@@ -64,8 +64,6 @@ export default function Navbar() {
     document.addEventListener('mousedown', handleClickOutside)
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [])
-
-  useEffect(() => { setMobileOpen(false) }, [pathname])
 
   if (AUTH_ROUTES.some(r => pathname.startsWith(r))) return null
 
@@ -199,7 +197,7 @@ export default function Navbar() {
       {mobileOpen && (
         <div className="md:hidden bg-white border-t border-gray-100 px-4 py-3 space-y-1">
           {NAV_LINKS.map(({ href, label }) => (
-            <Link key={href} href={href}
+            <Link key={href} href={href} onClick={() => setMobileOpen(false)}
               className={`block px-3 py-2 rounded-lg text-sm font-medium ${
                 isActive(href) ? 'bg-[#722F37]/10 text-[#722F37]' : 'text-gray-700 hover:bg-gray-50'
               }`}>
@@ -208,22 +206,22 @@ export default function Navbar() {
           ))}
           {!user && (
             <div className="pt-2 border-t border-gray-100 flex gap-2">
-              <Link href="/login" className="flex-1 text-center py-2 text-sm font-medium border border-gray-200 rounded-lg text-gray-700">
+              <Link href="/login" onClick={() => setMobileOpen(false)} className="flex-1 text-center py-2 text-sm font-medium border border-gray-200 rounded-lg text-gray-700">
                 Accedi
               </Link>
-              <Link href="/registrati" className="flex-1 text-center py-2 text-sm font-medium bg-[#722F37] text-white rounded-lg">
+              <Link href="/registrati" onClick={() => setMobileOpen(false)} className="flex-1 text-center py-2 text-sm font-medium bg-[#722F37] text-white rounded-lg">
                 Registrati
               </Link>
             </div>
           )}
           {user && (
             <div className="pt-2 border-t border-gray-100 space-y-1">
-              <Link href="/profilo" className="block px-3 py-2 rounded-lg text-sm text-gray-700 hover:bg-gray-50">Profilo</Link>
+              <Link href="/profilo" onClick={() => setMobileOpen(false)} className="block px-3 py-2 rounded-lg text-sm text-gray-700 hover:bg-gray-50">Profilo</Link>
               {profile?.role === 'cantina_owner' && (
-                <Link href="/dashboard" className="block px-3 py-2 rounded-lg text-sm text-[#722F37] font-medium hover:bg-[#722F37]/5">Area titolare</Link>
+                <Link href="/dashboard" onClick={() => setMobileOpen(false)} className="block px-3 py-2 rounded-lg text-sm text-[#722F37] font-medium hover:bg-[#722F37]/5">Area titolare</Link>
               )}
               {profile?.role === 'admin' && (
-                <Link href="/admin" className="block px-3 py-2 rounded-lg text-sm text-amber-700 font-medium hover:bg-amber-50">Pannello admin</Link>
+                <Link href="/admin" onClick={() => setMobileOpen(false)} className="block px-3 py-2 rounded-lg text-sm text-amber-700 font-medium hover:bg-amber-50">Pannello admin</Link>
               )}
               <button onClick={handleLogout} className="block w-full text-left px-3 py-2 rounded-lg text-sm text-gray-700 hover:bg-gray-50">
                 Esci

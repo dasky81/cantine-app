@@ -16,6 +16,8 @@ type EditableFields = Pick<Cantina,
   'servizi' | 'lingua_visita' | 'certificazioni' | 'foto_principale'
 >
 
+const supabase = createClient()
+
 export default function ModificaCantinaPage() {
   const [cantina, setCantina] = useState<Cantina | null>(null)
   const [form, setForm] = useState<Partial<EditableFields>>({})
@@ -25,7 +27,6 @@ export default function ModificaCantinaPage() {
   const [uploading, setUploading] = useState(false)
   const fileRef = useRef<HTMLInputElement>(null)
   const router = useRouter()
-  const supabase = createClient()
 
   useEffect(() => {
     async function load() {
@@ -52,7 +53,7 @@ export default function ModificaCantinaPage() {
       setLoading(false)
     }
     load()
-  }, [router, supabase])
+  }, [router])
 
   function set(field: keyof EditableFields, value: unknown) {
     setForm(prev => ({ ...prev, [field]: value }))
@@ -133,7 +134,7 @@ export default function ModificaCantinaPage() {
 
       {/* Campi sola lettura */}
       <div className="bg-amber-50 border border-amber-100 rounded-xl px-4 py-3 mb-6 text-sm text-amber-700">
-        <strong>Nome, regione, comune, vini e denominazioni</strong> possono essere modificati solo dall'amministratore. Contattaci per aggiornamenti.
+        <strong>Nome, regione, comune, vini e denominazioni</strong> possono essere modificati solo dall&apos;amministratore. Contattaci per aggiornamenti.
       </div>
 
       <form onSubmit={handleSave} className="space-y-6">

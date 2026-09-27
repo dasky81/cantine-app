@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { Save, Upload } from 'lucide-react'
 import { createClient } from '@/lib/supabase'
 import type { Cantina } from '@/lib/supabase'
+import type { TablesInsert } from '@/lib/database.types'
 
 const CERT_OPTIONS = ['Biologico', 'Biodinamico', 'Sostenibile']
 const SERVIZI_OPTIONS = ['Degustazione', 'Vendita diretta', 'Visita guidata', 'Ristorante', 'Pernottamento', 'Enoteca', 'Agriturismo']
@@ -83,9 +84,15 @@ export default function NuovaCantinaPage() {
       return
     }
     setSaving(true)
-    const { data, error } = await supabase.from('cantine').insert({
-      ...form, created_at: new Date().toISOString(), updated_at: new Date().toISOString(),
-    }).select().single()
+    const payload: TablesInsert<'cantine'> = {
+      ...form,
+      nome: form.nome,
+      slug: form.slug,
+      regione: form.regione,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    }
+    const { data, error } = await supabase.from('cantine').insert(payload).select().single()
     if (error) { alert(`Errore: ${error.message}`); setSaving(false); return }
     router.push(`/admin/cantine/${data.id}`)
   }

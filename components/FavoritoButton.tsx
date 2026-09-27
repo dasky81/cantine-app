@@ -4,11 +4,12 @@ import { useState, useEffect } from 'react'
 import { Heart } from 'lucide-react'
 import { createClient } from '@/lib/supabase'
 
+const supabase = createClient()
+
 export default function FavoritoButton({ cantinaId }: { cantinaId: string }) {
   const [isFavorite, setIsFavorite] = useState(false)
   const [loading, setLoading] = useState(false)
   const [userId, setUserId] = useState<string | null>(null)
-  const supabase = createClient()
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data: { user } }) => {

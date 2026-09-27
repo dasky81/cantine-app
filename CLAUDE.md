@@ -25,7 +25,7 @@ Parte della rete **viaggi.app** (insieme a agriturismi.app, crociera.app, bnb.lo
 ## 🏗️ STACK TECNICO
 
 ### Frontend
-- **Framework**: Next.js 14 (App Router)
+- **Framework**: Next.js 16 (App Router)
 - **Styling**: Tailwind CSS + shadcn/ui
 - **Mappe**: Leaflet.js (open source, zero costi)
 - **Lingua UI**: Italiano (it-IT)
@@ -267,10 +267,9 @@ Nero d'Avola, Primitivo, Vermentino, Montepulciano, Franciacorta
 
 ```env
 NEXT_PUBLIC_SUPABASE_URL=
-NEXT_PUBLIC_SUPABASE_ANON_KEY=
-SUPABASE_SERVICE_ROLE_KEY=
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=
 ANTHROPIC_API_KEY=
-SEED_SECRET=cantine2026
+SEED_SECRET=
 NEXT_PUBLIC_SITE_URL=https://cantine.app
 ```
 

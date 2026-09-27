@@ -4,9 +4,10 @@ import { useEffect } from 'react'
 import { usePathname } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
 
+const supabase = createClient()
+
 export default function PageTracker() {
   const pathname = usePathname()
-  const supabase = createClient()
 
   useEffect(() => {
     supabase.from('visite_log').insert({

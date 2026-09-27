@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerClient } from '@/lib/supabase-server'
-import { createAdminClient } from '@/lib/supabase-admin'
 
 async function requireAdmin() {
   const supabase = await createServerClient()
@@ -17,8 +16,8 @@ export async function POST(req: NextRequest) {
   if (!user) return NextResponse.json({ error: 'Non autorizzato' }, { status: 401 })
 
   const body = await req.json()
-  const admin = createAdminClient()
-  const { data, error } = await admin
+  const supabase = await createServerClient()
+  const { data, error } = await supabase
     .from('post')
     .insert({ ...body, autore_id: user.id })
     .select()
@@ -39,8 +38,8 @@ export async function PATCH(req: NextRequest) {
   const { id, ...fields } = await req.json()
   if (!id) return NextResponse.json({ error: 'id mancante' }, { status: 400 })
 
-  const admin = createAdminClient()
-  const { data, error } = await admin
+  const supabase = await createServerClient()
+  const { data, error } = await supabase
     .from('post')
     .update(fields)
     .eq('id', id)
@@ -62,8 +61,8 @@ export async function DELETE(req: NextRequest) {
   const { id } = await req.json()
   if (!id) return NextResponse.json({ error: 'id mancante' }, { status: 400 })
 
-  const admin = createAdminClient()
-  const { error } = await admin.from('post').delete().eq('id', id)
+  const supabase = await createServerClient()
+  const { error } = await supabase.from('post').delete().eq('id', id)
 
   if (error) {
     console.error('[api/admin/blog] DELETE error:', error)

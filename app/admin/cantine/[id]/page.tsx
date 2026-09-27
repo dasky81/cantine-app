@@ -9,6 +9,8 @@ const CERT_OPTIONS = ['Biologico', 'Biodinamico', 'Sostenibile']
 const SERVIZI_OPTIONS = ['Degustazione', 'Vendita diretta', 'Visita guidata', 'Ristorante', 'Pernottamento', 'Enoteca', 'Agriturismo']
 const LINGUA_OPTIONS = ['Italiano', 'Inglese', 'Francese', 'Tedesco', 'Spagnolo', 'Cinese']
 
+const supabase = createClient()
+
 function TagInput({ value, onChange, placeholder }: { value: string[]; onChange: (v: string[]) => void; placeholder: string }) {
   const [input, setInput] = useState('')
   return (
@@ -44,7 +46,6 @@ export default function EditCantinePage({ params }: { params: Promise<{ id: stri
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
   const router = useRouter()
-  const supabase = createClient()
 
   useEffect(() => {
     supabase.from('cantine').select('*').eq('id', id).single().then(({ data }) => {

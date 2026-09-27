@@ -1,5 +1,5 @@
 import type { MetadataRoute } from 'next'
-import { createAdminClient } from '@/lib/supabase-admin'
+import { createServerClient } from '@/lib/supabase-server'
 
 const BASE = 'https://cantine.app'
 
@@ -11,7 +11,7 @@ const VINI = ['brunello-di-montalcino', 'barolo', 'chianti-classico', 'amarone',
   'nero-davola', 'primitivo', 'vermentino', 'montepulciano', 'franciacorta']
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const supabase = createAdminClient()
+  const supabase = await createServerClient()
 
   const [{ data: cantine }, { data: post }] = await Promise.all([
     supabase.from('cantine').select('slug, updated_at'),

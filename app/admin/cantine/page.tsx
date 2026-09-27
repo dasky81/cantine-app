@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { Search, CheckCircle, Star, Edit, ChevronDown } from 'lucide-react'
 import { createClient } from '@/lib/supabase'
@@ -10,27 +10,31 @@ const REGIONI = ['Toscana', 'Piemonte', 'Veneto', 'Sicilia', 'Puglia', 'Campania
   'Trentino-Alto Adige', 'Friuli-Venezia Giulia', 'Sardegna', 'Umbria', 'Marche', 'Abruzzo',
   'Lazio', 'Emilia-Romagna', 'Calabria', 'Basilicata', 'Liguria', 'Molise', "Valle d'Aosta"]
 
+const supabase = createClient()
+
 export default function AdminCantinePage() {
   const [cantine, setCantine] = useState<Cantina[]>([])
   const [search, setSearch] = useState('')
   const [regione, setRegione] = useState('')
   const [loading, setLoading] = useState(true)
-  const supabase = createClient()
-
-  const loadCantine = useCallback(async () => {
-    setLoading(true)
+  useEffect(() => {
+    let active = true
     let q = supabase.from('cantine').select('*').order('nome')
     if (search) q = q.ilike('nome', `%${search}%`)
     if (regione) q = q.eq('regione', regione)
-    const { data } = await q.limit(100)
-    setCantine((data as Cantina[]) ?? [])
-    setLoading(false)
+    q.limit(100).then(({ data }) => {
+      if (!active) return
+      setCantine((data as Cantina[]) ?? [])
+      setLoading(false)
+    })
+    return () => { active = false }
   }, [search, regione])
 
-  useEffect(() => { loadCantine() }, [loadCantine])
-
   async function toggleField(id: string, field: 'verified' | 'featured', current: boolean) {
-    await supabase.from('cantine').update({ [field]: !current }).eq('id', id)
+    const update = field === 'verified'
+      ? { verified: !current }
+      : { featured: !current }
+    await supabase.from('cantine').update(update).eq('id', id)
     setCantine(prev => prev.map(c => c.id === id ? { ...c, [field]: !current } : c))
   }
 
@@ -55,14 +59,14 @@ export default function AdminCantinePage() {
             type="text"
             placeholder="Cerca per nome..."
             value={search}
-            onChange={e => setSearch(e.target.value)}
+            onChange={e => { setLoading(true); setSearch(e.target.value) }}
             className="w-full pl-9 pr-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#722F37]/20"
           />
         </div>
         <div className="relative">
           <select
             value={regione}
-            onChange={e => setRegione(e.target.value)}
+            onChange={e => { setLoading(true); setRegione(e.target.value) }}
             className="appearance-none pl-4 pr-8 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#722F37]/20 bg-white"
           >
             <option value="">Tutte le regioni</option>

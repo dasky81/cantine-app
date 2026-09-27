@@ -5,7 +5,7 @@ import { createServerClient } from '@/lib/supabase-server'
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json()
-    const query: string = body?.query?.trim()
+    const query: string = body?.query?.trim().slice(0, 240)
 
     if (!query) {
       return NextResponse.json({ error: 'Query mancante' }, { status: 400 })

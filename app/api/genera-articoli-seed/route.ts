@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import Anthropic from '@anthropic-ai/sdk'
-import { createAdminClient } from '@/lib/supabase-admin'
-
-const client = new Anthropic()
+import { createServerClient } from '@/lib/supabase-server'
 
 const ARTICOLI = [
   {
@@ -39,11 +37,23 @@ const ARTICOLI = [
 
 export async function GET(req: NextRequest) {
   const secret = req.headers.get('x-seed-secret')
-  if (secret !== 'cantine2026') {
+  if (!process.env.SEED_SECRET || secret !== process.env.SEED_SECRET) {
     return NextResponse.json({ error: 'Non autorizzato' }, { status: 401 })
   }
 
-  const supabase = createAdminClient()
+  const supabase = await createServerClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return NextResponse.json({ error: 'Non autenticato' }, { status: 401 })
+  const { data: profile } = await supabase
+    .from('profiles').select('role').eq('id', user.id).single()
+  if (profile?.role !== 'admin') {
+    return NextResponse.json({ error: 'Non autorizzato' }, { status: 403 })
+  }
+  if (!process.env.ANTHROPIC_API_KEY) {
+    return NextResponse.json({ error: 'Funzione AI non configurata' }, { status: 503 })
+  }
+
+  const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
   const risultati: { slug: string; status: string }[] = []
 
   for (const art of ARTICOLI) {

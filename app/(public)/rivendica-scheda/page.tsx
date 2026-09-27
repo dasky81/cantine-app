@@ -8,22 +8,21 @@ import { createClient } from '@/lib/supabase'
 import { useSearchParams } from 'next/navigation'
 import type { Cantina } from '@/lib/supabase'
 
+const supabase = createClient()
+
 function RivendicaContent() {
   const [nome, setNome] = useState('')
   const [email, setEmail] = useState('')
   const [telefono, setTelefono] = useState('')
   const [messaggio, setMessaggio] = useState('')
-  const [cantinaId, setCantinaId] = useState('')
+  const searchParams = useSearchParams()
+  const [cantinaId, setCantinaId] = useState(() => searchParams.get('cantina') ?? '')
   const [cantine, setCantine] = useState<Cantina[]>([])
   const [loading, setLoading] = useState(false)
   const [success, setSuccess] = useState(false)
   const [error, setError] = useState('')
-  const searchParams = useSearchParams()
-  const supabase = createClient()
 
   useEffect(() => {
-    const id = searchParams.get('cantina')
-    if (id) setCantinaId(id)
     supabase.from('cantine').select('id, nome, regione').order('nome')
       .then(({ data }) => { if (data) setCantine(data as Cantina[]) })
   }, [])
@@ -107,4 +106,3 @@ export default function RivendicaSchedaPage() {
     </div>
   )
 }
-
