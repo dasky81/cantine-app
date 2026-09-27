@@ -195,6 +195,65 @@ CREATE POLICY "visite_insert_public" ON visite_log FOR INSERT TO anon, authentic
 CREATE POLICY "visite_select_admin" ON visite_log FOR SELECT TO authenticated
   USING ((SELECT private.is_admin()));
 
+-- Storage immagini: lettura pubblica, scrittura solo per admin e proprietari.
+INSERT INTO storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+VALUES (
+  'cantine-foto',
+  'cantine-foto',
+  TRUE,
+  10485760,
+  ARRAY['image/jpeg', 'image/png', 'image/webp', 'image/avif']
+)
+ON CONFLICT (id) DO UPDATE SET
+  public = EXCLUDED.public,
+  file_size_limit = EXCLUDED.file_size_limit,
+  allowed_mime_types = EXCLUDED.allowed_mime_types;
+
+CREATE POLICY "cantine_foto_read_public" ON storage.objects
+  FOR SELECT TO anon, authenticated
+  USING (bucket_id = 'cantine-foto');
+
+CREATE POLICY "cantine_foto_insert_managers" ON storage.objects
+  FOR INSERT TO authenticated
+  WITH CHECK (
+    bucket_id = 'cantine-foto'
+    AND EXISTS (
+      SELECT 1 FROM public.profiles
+      WHERE id = (SELECT auth.uid())
+        AND role IN ('admin', 'cantina_owner')
+    )
+  );
+
+CREATE POLICY "cantine_foto_update_managers" ON storage.objects
+  FOR UPDATE TO authenticated
+  USING (
+    bucket_id = 'cantine-foto'
+    AND EXISTS (
+      SELECT 1 FROM public.profiles
+      WHERE id = (SELECT auth.uid())
+        AND role IN ('admin', 'cantina_owner')
+    )
+  )
+  WITH CHECK (
+    bucket_id = 'cantine-foto'
+    AND EXISTS (
+      SELECT 1 FROM public.profiles
+      WHERE id = (SELECT auth.uid())
+        AND role IN ('admin', 'cantina_owner')
+    )
+  );
+
+CREATE POLICY "cantine_foto_delete_managers" ON storage.objects
+  FOR DELETE TO authenticated
+  USING (
+    bucket_id = 'cantine-foto'
+    AND EXISTS (
+      SELECT 1 FROM public.profiles
+      WHERE id = (SELECT auth.uid())
+        AND role IN ('admin', 'cantina_owner')
+    )
+  );
+
 -- ============================================================
 -- TRIGGER: auto-crea profilo al signup
 -- ============================================================
